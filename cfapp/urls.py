@@ -4,9 +4,9 @@ from . import views
 
 router = DefaultRouter()  # pylint: disable=C0103
 
-router.register(r'profile',
-                views.ProfileViewSet,
-                base_name='Profile')
+# router.register(r'profile',
+#                 views.ProfileViewSet,
+#                 base_name='Profile')
 router.register(r'tenant',
                 views.TenantViewSet)
 # router.register(r'balance-entry',

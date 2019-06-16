@@ -1,11 +1,52 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User
+
+from .forms import UserCreationForm, TenantForm, AccountEntryForm, RateForm
 
 from .models import (
-    Tenant,
     Profile,
+    Tenant,
     Tag,
+    Service,
+    AccountEntry,
+    Rate,
 )
-# Register your models here.
+
+
+# def get_unique_tenant():
+#     count = Tenant.objects.all().count()
+#     if count == 1:
+#         return dict(tenant=[Tenant.objects.all().first().pk])
+#     return {}
+
+
+class ProfileInline(admin.TabularInline):
+    model = Profile
+    can_delete = False
+
+    # prepopulated_fields = get_unique_tenant()
+
+
+class UserAdmin(BaseUserAdmin):
+    add_form = UserCreationForm
+
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'email', 'password1', 'password2', ),
+        }),
+    )
+
+    inlines = [
+        ProfileInline,  # adds the inline profile to user forms
+    ]
+    list_display = ('username', 'email', 'first_name',
+                    'last_name', 'is_staff', 'is_active')
+
+# class UserAdmin(BaseUserAdmin):
+#     form = UserChangeForm
+    # add_form = UserCreationForm
 
 
 class AdminAuthSignature(admin.ModelAdmin):
@@ -26,14 +67,64 @@ class AdminAuthSignature(admin.ModelAdmin):
         abstract = True
 
 
-class TenantAdmin(AdminAuthSignature):
-    list_display = ('tenant', 'description', 'created_by', 'modified_by')
+class AdminTenant(AdminAuthSignature):
+    list_display = ('tenant', 'description', 'balance',
+                    'created_by', 'created_on', 'modified_by', 'modified_on')
+    readonly_fields = ('balance',)
+    form = TenantForm
 
 
 class AdminTag(AdminAuthSignature):
-    list_display = ('tenant', 'tag')
+    list_display = ('tenant', 'tag', 'slug', 'created_by', 'created_on')
 
 
-admin.site.register(Tenant, TenantAdmin)
-admin.site.register(Profile)
+class AdminService(AdminAuthSignature):
+    pass
+
+
+class AdminAccountEntry(AdminAuthSignature):
+    list_display = ('tenant', 'entry_type', 'amount',
+                    'reference', 'created_on', 'created_by')
+    form = AccountEntryForm
+    admin_fields = ('tenant', 'entry_type',
+                    'amount', 'reference')
+
+    fieldsets = (
+        (None, {'fields': admin_fields}),
+
+    )
+
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': admin_fields,
+        }),
+    )
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # editing an existing object
+            return ('amount', 'tenant', 'entry_type')
+        return self.readonly_fields
+
+    # def get_fieldsets(self, request, obj=None):
+    #     if obj:
+    #         return self.fieldsets
+    #     return self.add_fieldsets
+
+
+class AdminRate(AdminAuthSignature):
+    form = RateForm
+    list_display = ('tenant', 'service', 'unit_price', 'is_active',
+                    'valid_from', 'valid_until', 'created_by', 'created_on')
+
+
+# register custom user model
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
+
+# admin.site.register(Profile)
+admin.site.register(Tenant, AdminTenant)
+admin.site.register(Service, AdminService)
+admin.site.register(AccountEntry, AdminAccountEntry)
+admin.site.register(Rate, AdminRate)
 admin.site.register(Tag, AdminTag)

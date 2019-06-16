@@ -22,18 +22,18 @@ from .models import (
 #     default=serializers.CreateOnlyDefault(timezone.now)
 # )
 
-class FullProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Profile
-        fields = '__all__'
+# class FullProfileSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Profile
+#         fields = '__all__'
 
 
-class BasicProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Profile
-        fields = '__all__'
-        read_only_fields = ('tenant',
-                            'user', 'verified_number')
+# class BasicProfileSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Profile
+#         fields = '__all__'
+#         read_only_fields = ('tenant',
+#                             'user', 'verified_number')
 
 
 class TenantSerializer(serializers.ModelSerializer):

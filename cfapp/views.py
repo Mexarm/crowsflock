@@ -2,7 +2,7 @@ from rest_framework import viewsets, permissions
 #from rest_framework.decorators import action
 #from rest_framework.response import Response
 from .models import (
-    Profile,
+    # Profile,
     Tenant,
     # Role,
     # BalanceEntry,
@@ -15,8 +15,8 @@ from .models import (
     # DataSet,
 )
 from .serializers import (
-    FullProfileSerializer,
-    BasicProfileSerializer,
+    # FullProfileSerializer,
+    # BasicProfileSerializer,
     TenantSerializer,
     # RoleSerializer,
     # BalanceEntrySerializer,
@@ -36,17 +36,17 @@ from .permissions import (
 )
 
 
-class ProfileViewSet(viewsets.ModelViewSet):
-    # serializer_class = ProfileSerializer
-    permission_classes = (permissions.IsAuthenticated, IsOwner)
+# class ProfileViewSet(viewsets.ModelViewSet):
+#     # serializer_class = ProfileSerializer
+#     permission_classes = (permissions.IsAuthenticated, IsOwner)
 
-    def get_queryset(self):
-        return Profile.objects.filter(user=self.request.user)
+#     def get_queryset(self):
+#         return Profile.objects.filter(user=self.request.user)
 
-    def get_serializer_class(self):
-        if self.request.user.is_staff:
-            return FullProfileSerializer
-        return BasicProfileSerializer
+#     def get_serializer_class(self):
+#         if self.request.user.is_staff:
+#             return FullProfileSerializer
+#         return BasicProfileSerializer
 
 
 class TenantViewSet(viewsets.ModelViewSet):

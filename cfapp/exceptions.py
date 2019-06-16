@@ -1,0 +1,2 @@
+class NotEnougthFundsError(ValueError):
+    pass
