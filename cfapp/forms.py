@@ -29,7 +29,7 @@ class AccountEntryForm(forms.ModelForm):
         entry_type = self.fields.get('entry_type')
         if entry_type:
             entry_type.choices = (
-                (AccountEntry.TYPE_PAYMENT, 'Payment'), )
+                (AccountEntry.PAYMENT, 'Payment'), )
 
 
 class RateForm(forms.ModelForm):

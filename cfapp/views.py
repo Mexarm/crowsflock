@@ -32,7 +32,7 @@ from .serializers import (
 from .permissions import (
     UserIsTenantMember,
     IsOwner,
-    user_tenants
+    # user_tenants
 )
 
 
@@ -68,7 +68,13 @@ class TagViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated, UserIsTenantMember)
 
     def get_queryset(self):
-        return Tag.objects.filter(tenant__in=user_tenants(self.request))
+        return Tag.objects.filter(tenant=self.request.user.profile.tenant)
+
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+    def perform_create(self, serializer):
+        serializer.save(tenant=self.request.user.profile.tenant)
 
 
 # class StorageCredentialViewSet(viewsets.ModelViewSet):

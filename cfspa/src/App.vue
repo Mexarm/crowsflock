@@ -1,8 +1,9 @@
 <template>
   <v-app>
-    <v-toolbar app>
+
+    <!-- <v-toolbar app>
       <v-toolbar-title class="headline text-uppercase">
-        <span>crowns</span>
+        <span>crows</span>
         <span class="font-weight-light">flock</span>
       </v-toolbar-title>
       <v-spacer></v-spacer>
@@ -13,26 +14,42 @@
       >
         <span class="mr-2">Latest Release</span>
       </v-btn>
-    </v-toolbar>
+    </v-toolbar> -->
 
-    <v-content>
-      <HelloWorld/>
-    </v-content>
+    <!-- <v-content>
+      <MainContent />
+    </v-content> -->
+
+    <!-- <app-drawer></app-drawer> -->
+    <app-toolbar></app-toolbar>
+    <main>
+      <v-content>
+        <router-view></router-view>
+      </v-content>
+    </main>
+    <app-footer></app-footer>
+
   </v-app>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld'
+//import MainContent from "./components/MainContent";
+import appFooter from "./components/core/AppFooter";
+import appToolbar from "./components/core/AppToolbar";
+//import appDrawer from "./components/core/AppDrawer";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
-    HelloWorld
+    //  MainContent,
+    //  appDrawer,
+    appToolbar,
+    appFooter
   },
-  data () {
+  data() {
     return {
       //
-    }
+    };
   }
-}
+};
 </script>

@@ -56,19 +56,22 @@ class TenantSerializer(serializers.ModelSerializer):
 
 class TagSerializer(serializers.ModelSerializer):
     # pylint: disable=W0221
-    def validate(self, data):
+    def validate_tag(self, value):
         """
         Check if the slug for the tag exists
         """
-        if Tag.objects.filter(tenant=data['tenant'], slug=slugify(data['tag'])).exists():
-            raise serializers.ValidationError("tag already exists")
-        return data
+        if Tag.objects.filter(tenant=self.context['request'].user.profile.tenant,
+                              slug=slugify(value)).exists():
+            raise serializers.ValidationError(
+                "a slug for this tag already exist")
+        return value
     # https://www.django-rest-framework.org/api-guide/relations/#nested-relationships
-    tenant = TenantSerializer(many=False, read_only=True)
+    #tenant = TenantSerializer(many=False, read_only=True)
 
     class Meta:
         model = Tag
-        fields = ('id', 'tenant', 'tag', 'slug')
+        # fields = ('id', 'tenant', 'tag', 'slug')
+        fields = ('id', 'tag', 'slug')
 
 
 # class StorageCredentialSerializer(serializers.ModelSerializer):

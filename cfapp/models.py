@@ -92,12 +92,12 @@ class Service(AuthSignatureMixin):
 
 class AccountEntry(TenantFieldMixin, AuthSignatureMixin):
 
-    TYPE_PAYMENT = 'PAYMENT'
-    TYPE_CHARGE = 'CHARGE'
+    PAYMENT = 'PAYMENT'
+    CHARGE = 'CHARGE'
 
     TYPE_CHOICES = (
-        (TYPE_PAYMENT, 'Payment'),
-        (TYPE_CHARGE, 'Charge')
+        (PAYMENT, 'Payment'),
+        (CHARGE, 'Charge')
     )
 
     entry_type = models.CharField(

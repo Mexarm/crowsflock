@@ -1,11 +1,6 @@
 from rest_framework import permissions
 
 
-def user_tenants(request):
-    user = request.user
-    return [t.id for t in user.profile.tenant.all()]
-
-
 class UserIsTenantMember(permissions.BasePermission):
     """
     Custom permission allow only if the user is a member of the
@@ -13,7 +8,7 @@ class UserIsTenantMember(permissions.BasePermission):
     """
 
     def has_object_permission(self, request, view, obj):
-        return obj.tenant.id in user_tenants(request)
+        return obj.tenant.id == request.user.tenant.id
 
 
 class IsOwner(permissions.BasePermission):
