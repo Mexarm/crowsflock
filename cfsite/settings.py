@@ -158,5 +158,37 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
 }
 
+# django-storage
+#DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+# Your Amazon Web Services access key
+#AWS_ACCESS_KEY_ID = CONFIG['AWS_ACCESS_KEY_ID']
+# Your Amazon Web Services secret access key, as a string.
+#AWS_SECRET_ACCESS_KEY = CONFIG['AWS_SECRET_ACCESS_KEY']
+# Your Amazon Web Services storage bucket name, as a string.
+#AWS_STORAGE_BUCKET_NAME = CONFIG['AWS_STORAGE_BUCKET_NAME']
+# (optional, None or canned ACL, default public-read)
+AWS_DEFAULT_ACL = None
+
+# storages
+AWS_ACCESS_KEY_ID = CONFIG['AWS_ACCESS_KEY_ID']
+AWS_SECRET_ACCESS_KEY = CONFIG['AWS_SECRET_ACCESS_KEY']
+AWS_STORAGE_BUCKET_NAME = CONFIG['AWS_STORAGE_BUCKET_NAME']
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
+
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+AWS_S3_REGION_NAME = 'us-east-2'
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+#AWS_STATIC_LOCATION = 'static'
+#STATICFILES_STORAGE = 'dds2be.storage_backends.StaticStorage'
+#STATIC_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, AWS_STATIC_LOCATION)
+
+#AWS_PUBLIC_MEDIA_LOCATION = 'media/public'
+#DEFAULT_FILE_STORAGE = 'dds2be.storage_backends.PublicMediaStorage'
+
+AWS_PRIVATE_MEDIA_LOCATION = 'media/private'
+PRIVATE_FILE_STORAGE = 'dds2be.storage_backends.PrivateMediaStorage'
+
 
 CFAPP_MAX_KEY_LENGTH = 20

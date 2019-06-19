@@ -8,7 +8,7 @@ class UserIsTenantMember(permissions.BasePermission):
     """
 
     def has_object_permission(self, request, view, obj):
-        return obj.tenant.id == request.user.tenant.id
+        return obj.tenant.id == request.user.profile.tenant.id
 
 
 class IsOwner(permissions.BasePermission):

@@ -15,6 +15,9 @@ router.register(r'tenant',
 router.register(r'tag',
                 views.TagViewSet,
                 base_name='Tag')
+router.register(r'secret',
+                views.SecretViewSet,
+                base_name='secret')
 urlpatterns = [
     path('', include(router.urls)),
 ]

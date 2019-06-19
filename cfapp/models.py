@@ -10,6 +10,8 @@ from django.conf import settings
 from .exceptions import NotEnougthFundsError
 from .mixins import AuthSignatureMixin, TenantFieldMixin
 
+from cfsite.storage_backends import PrivateMediaStorage
+
 
 class Profile(models.Model):
     user = models.OneToOneField(
@@ -162,3 +164,38 @@ class Tag(TenantFieldMixin, AuthSignatureMixin):
     def save(self, *args, **kwargs):  # pylint: disable=W0221
         self.slug = slugify(self.tag)
         super(Tag, self).save(*args, **kwargs)
+
+
+class Attachment(TenantFieldMixin, AuthSignatureMixin):
+    S3 = 1
+    URL = 2
+
+    SOURCE_CHOICES = (
+        (S3, 'S3'),
+        (URL, 'URL'),
+    )
+    description = models.CharField(max_length=128, blank=False, null=False)
+    source = models.IntegerField(choices=SOURCE_CHOICES)
+    file = models.FileField(upload_to='uploads/',
+                            storage=PrivateMediaStorage(),
+                            blank=True)
+
+    @property
+    def original_filename(self):
+        encoded_filename = self.file.name.split('/')[-1]
+        return base64.urlsafe_b64decode(encoded_filename).decode('utf-8')
+
+    def __str__(self):
+        return f'{self.description}'
+
+
+class Secret(TenantFieldMixin, AuthSignatureMixin):
+    key = models.CharField(max_length=128, null=False, blank=False)
+    secret = models.CharField(max_length=256, null=False, blank=False)
+
+    class Meta:
+        unique_together = ('key', 'tenant')
+        ordering = ('key',)
+
+    def __str__(self):
+        return f'Secret: Key={self.key}'

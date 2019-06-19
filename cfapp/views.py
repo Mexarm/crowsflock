@@ -7,6 +7,7 @@ from .models import (
     # Role,
     # BalanceEntry,
     Tag,
+    Secret,
     # StorageCredential,
     # Domain,
     # Sender,
@@ -21,6 +22,7 @@ from .serializers import (
     # RoleSerializer,
     # BalanceEntrySerializer,
     TagSerializer,
+    SecretSerializer,
     # StorageCredentialSerializer,
     # DomainSerializer,
     # SenderSerializer,
@@ -76,6 +78,19 @@ class TagViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(tenant=self.request.user.profile.tenant)
 
+
+class SecretViewSet(viewsets.ModelViewSet):
+    serializer_class = SecretSerializer
+    permission_classes = (permissions.IsAuthenticated, UserIsTenantMember)
+
+    def get_queryset(self):
+        return Secret.objects.filter(tenant=self.request.user.profile.tenant)
+
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+    def destroy(self, request, *args, **kwargs):
+        pass
 
 # class StorageCredentialViewSet(viewsets.ModelViewSet):
 #     serializer_class = StorageCredentialSerializer

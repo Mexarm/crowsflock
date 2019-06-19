@@ -3,6 +3,7 @@ from rest_framework import serializers
 from .models import (
     Profile,
     Tenant,
+    Secret,
     # Role,
     # BalanceEntry,
     Tag,
@@ -53,7 +54,6 @@ class TenantSerializer(serializers.ModelSerializer):
 #         model = BalanceEntry
 #         fields = '__all__'
 
-
 class TagSerializer(serializers.ModelSerializer):
     # pylint: disable=W0221
     def validate_tag(self, value):
@@ -66,7 +66,7 @@ class TagSerializer(serializers.ModelSerializer):
                 "a slug for this tag already exist")
         return value
     # https://www.django-rest-framework.org/api-guide/relations/#nested-relationships
-    #tenant = TenantSerializer(many=False, read_only=True)
+    # tenant = TenantSerializer(many=False, read_only=True)
 
     class Meta:
         model = Tag
@@ -74,6 +74,46 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ('id', 'tag', 'slug')
 
 
+class SecretSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Secret
+        fields = ('id', 'key', 'secret', 'created_by',
+                  'created_on', 'modified_on', 'modified_by')
+        extra_kwargs = {'secret': {'write_only': True},
+                        'created_by': {'read_only': True},
+                        'created_on': {'read_only': True},
+                        'modified_on': {'read_only': True},
+                        'modified_by': {'read_only': True},
+                        }
+
+    def get_tenant(self):
+        return self.get_user().profile.tenant
+
+    def get_user(self):
+        return self.context['request'].user
+
+    def validate_key(self, value):
+        tenant = self.get_tenant()
+        if Secret.objects.filter(key=value, tenant=tenant).exists():
+            raise serializers.ValidationError('key already exists')
+        return value
+
+    def create(self, validated_data):
+        tenant = validated_data.pop('tenant', None) or self.get_tenant()
+        created_by = validated_data.pop('created_by', None) or self.get_user()
+        return Secret.objects.create(tenant=tenant, created_by=created_by, **validated_data)
+
+    def update(self, instance, validated_data):
+        tenant = validated_data.pop('tenant', None) or self.get_tenant()
+        modified_by = validated_data.pop(
+            'modified_by', None) or self.get_user()
+        for (field, value) in validated_data.items():
+            setattr(instance, field, value)
+        instance.tenant = tenant
+        instance.modified_by = modified_by
+        instance.save()
+        return instance
 # class StorageCredentialSerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = StorageCredential
