@@ -168,9 +168,28 @@ class Tag(TenantFieldMixin, AuthSignatureMixin):
         super(Tag, self).save(*args, **kwargs)
 
 
-class Attachment(TenantFieldMixin, AuthSignatureMixin):
-    S3 = 1
-    URL = 2
+class SimpleAttachment(TenantFieldMixin, AuthSignatureMixin):
+    UPLOAD_PREFIX = 'simple_attachments/'
+    file = models.FileField(upload_to=UPLOAD_PREFIX,
+                            storage=PrivateMediaStorage(),
+                            blank=False, null=False)
+
+    rename = models.CharField(max_length=256, blank=True, null=True)
+
+    @property
+    def original_filename(self):
+        encoded_filename = self.file.name.split('/')[-1]
+        return base64.urlsafe_b64decode(encoded_filename).decode('utf-8')
+
+
+# class AttachmentBuilder(TenantFieldMixin, AuthSignatureMixin):
+#     # takes an open office file, or (inspire wfd :) make data merge and outputs a pdf
+#     UPLOAD_PREFIX = 'attachment_builder_templates/'
+
+
+class AdvancedAttachment(TenantFieldMixin, AuthSignatureMixin):
+    S3 = 'S3'
+    URL = 'URL'
 
     SOURCE_CHOICES = (
         (S3, 'S3'),
@@ -183,8 +202,9 @@ class Attachment(TenantFieldMixin, AuthSignatureMixin):
             'region': 'us-east-2'
         },
         'object': {
-            'key': '<FIELD:key>',
-            'bucket': '<FIELD:bucket>'
+            'key': '<FIELD:subdir>/<FIELD:name>',
+            'bucket': '<FIELD:bucket>',
+            'name': '<FIELD:name>',
         }
     }
 
@@ -198,20 +218,12 @@ class Attachment(TenantFieldMixin, AuthSignatureMixin):
     }
 
     description = models.CharField(max_length=128, blank=False, null=False)
-    source = models.IntegerField(choices=SOURCE_CHOICES)
-    file = models.FileField(upload_to='uploads/',
-                            storage=PrivateMediaStorage(),
-                            blank=True)
-
-    setup = JSONField()
-
-    @property
-    def original_filename(self):
-        encoded_filename = self.file.name.split('/')[-1]
-        return base64.urlsafe_b64decode(encoded_filename).decode('utf-8')
+    source = models.CharField(max_length=3, null=False,
+                              blank=False, choices=SOURCE_CHOICES)
+    setup = JSONField(blank=False, null=False)
 
     def __str__(self):
-        return f'{self.description}'
+        return f'{self.source} {self.description}'
 
 
 class Secret(TenantFieldMixin, AuthSignatureMixin):
