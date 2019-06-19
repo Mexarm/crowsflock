@@ -1,3 +1,5 @@
+import base64
+
 from decimal import Decimal
 from django.db import models
 from django.utils.text import slugify
@@ -7,10 +9,10 @@ from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.db import transaction  # ,DatabaseError
 from django.conf import settings
+from django.contrib.postgres.fields import JSONField
+from cfsite.storage_backends import PrivateMediaStorage
 from .exceptions import NotEnougthFundsError
 from .mixins import AuthSignatureMixin, TenantFieldMixin
-
-from cfsite.storage_backends import PrivateMediaStorage
 
 
 class Profile(models.Model):
@@ -174,11 +176,34 @@ class Attachment(TenantFieldMixin, AuthSignatureMixin):
         (S3, 'S3'),
         (URL, 'URL'),
     )
+    S3_SAMPLE_CONFIG = {
+        'auth': {
+            'aws_access_key_id': "<SECRET:AWS_ACCESS_KEY_ID>",
+            'aws_secret_access_key': "<SECRET:AWS_SECRET_ACCESS_KEY>",
+            'region': 'us-east-2'
+        },
+        'object': {
+            'key': '<FIELD:key>',
+            'bucket': '<FIELD:bucket>'
+        }
+    }
+
+    URL_SAMPLE_CONFIG = {
+        'auth': {
+            'username': 'myuser',
+            'password': '<SECRET:PASSWORD001>'
+        },
+        'url': 'https://api.example.com/document/<FIELD:myidfield>/',
+        'method': 'POST'
+    }
+
     description = models.CharField(max_length=128, blank=False, null=False)
     source = models.IntegerField(choices=SOURCE_CHOICES)
     file = models.FileField(upload_to='uploads/',
                             storage=PrivateMediaStorage(),
                             blank=True)
+
+    setup = JSONField()
 
     @property
     def original_filename(self):
