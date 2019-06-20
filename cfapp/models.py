@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.db import models
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.db import transaction  # ,DatabaseError
@@ -51,10 +51,10 @@ class Tenant(AuthSignatureMixin):
 
         with transaction.atomic():
             payments_aggregate = self.accountentry_set.filter(
-                entry_type=AccountEntry.TYPE_PAYMENT).aggregate(Sum(field))
+                entry_type=AccountEntry.PAYMENT).aggregate(Sum(field))
             payments = payments_aggregate[field + '__sum'] or 0.0
             charges_aggregate = self.accountentry_set.filter(
-                entry_type=AccountEntry.TYPE_CHARGE).aggregate(Sum(field))
+                entry_type=AccountEntry.CHARGE).aggregate(Sum(field))
             charges = charges_aggregate[field + '__sum'] or 0.0
             self.balance = payments - charges
             self.save()
@@ -62,19 +62,19 @@ class Tenant(AuthSignatureMixin):
 
     def charge(self, amount, **kwargs):
         if amount <= 0:
-            raise ValueError('cannot charge negative or zero amounts')
+            raise ValueError(_('cannot charge negative or zero amounts'))
 
         with transaction.atomic():
             self.update_balance()
             available = self.balance + self.max_credit
             if available >= amount:
-                data = dict(entry_type=AccountEntry.TYPE_CHARGE,
+                data = dict(entry_type=AccountEntry.CHARGE,
                             amount=amount, tenant=self)
                 data.update(kwargs)
                 entry = AccountEntry.objects.create(**data)
             else:
-                raise NotEnougthFundsError(
-                    'not enougth fund, make a payment or increase credit')
+                raise NotEnougthFundsError(_(
+                    'not enougth fund, make a payment or increase credit'))
             self.update_balance()
         return entry
 
@@ -161,7 +161,7 @@ class Tag(TenantFieldMixin, AuthSignatureMixin):
                     slug=slugify(self.tag)
                 ).exists()
         ):
-            raise ValidationError('Tag already exists')
+            raise ValidationError(_('Tag already exists'))
 
     def save(self, *args, **kwargs):  # pylint: disable=W0221
         self.slug = slugify(self.tag)
@@ -169,6 +169,7 @@ class Tag(TenantFieldMixin, AuthSignatureMixin):
 
 
 class SimpleAttachment(TenantFieldMixin, AuthSignatureMixin):
+    LOCAL_STORAGE_PATH = 'attachments/'
     UPLOAD_PREFIX = 'simple_attachments/'
     file = models.FileField(upload_to=UPLOAD_PREFIX,
                             storage=PrivateMediaStorage(),
@@ -190,6 +191,9 @@ class SimpleAttachment(TenantFieldMixin, AuthSignatureMixin):
 class AdvancedAttachment(TenantFieldMixin, AuthSignatureMixin):
     S3 = 'S3'
     URL = 'URL'
+
+    LOCAL_STORAGE_PATH = 'attachments/'
+    S3_SESSION = None
 
     SOURCE_CHOICES = (
         (S3, 'S3'),
@@ -214,7 +218,8 @@ class AdvancedAttachment(TenantFieldMixin, AuthSignatureMixin):
             'password': '<SECRET:PASSWORD001>'
         },
         'url': 'https://api.example.com/document/<FIELD:myidfield>/',
-        'method': 'POST'
+        'method': 'POST',
+        'name': '<FIELD:name>'
     }
 
     description = models.CharField(max_length=128, blank=False, null=False)
@@ -222,13 +227,102 @@ class AdvancedAttachment(TenantFieldMixin, AuthSignatureMixin):
                               blank=False, choices=SOURCE_CHOICES)
     setup = JSONField(blank=False, null=False)
 
+    def get_s3_session(self):
+        if not self.S3_SESSION:
+            import boto3
+            auth_setup = self.setup['auth']
+
+            self.S3_SESSION = boto3.Session(
+                aws_access_key_id=ak, aws_secret_access_key=sa)
+        return self.S3_SESSION
+
+    def download_file_s3(self, context):
+        pass
+
     def __str__(self):
         return f'{self.source} {self.description}'
+
+
+class Person(TenantFieldMixin, AuthSignatureMixin):
+    external_id = models.CharField(max_length=128)
+    first_name = models.CharField(max_length=80)
+    second_name = models.CharField(max_length=80)
+    lastname = models.CharField(max_length=80)
+    lastname2 = models.CharField(max_length=80)
+    country = models.CharField(max_length=40)
+    birthday = models.DateField()
+    attrs = JSONField()
+
+    def as_dict(self):
+        opts = self._meta
+        data = {}
+        for fld in opts.concrete_fields:
+            if isinstance(fld, models.ManyToManyField):
+                if self.pk is None:
+                    data[fld.name] = []
+                else:
+                    data[fld.name] = list(fld.value_from_object(
+                        self).values_list('pk', flat=True))
+            else:
+                data[fld.name] = fld.value_from_object(self)
+        return data
+
+    class Meta:
+        unique_together = ('tenant', 'external_id')
+
+
+class EmailContact(TenantFieldMixin, AuthSignatureMixin):
+    email = models.EmailField(max_length=256)
+    person = models.OneToOneField('Person', on_delete=models.CASCADE)
+
+    class Meta:
+        ordering = ('email',)
+        unique_together = ('email', 'tenant')
+
+    @property
+    def contact_info(self):
+        return self.email
+
+    def __str__(self):
+        return self.contact_info
+
+
+class PhoneContact(TenantFieldMixin, AuthSignatureMixin):
+    # @TODO: validate phone number
+    # https://github.com/stefanfoulis/django-phonenumber-field
+    # https://github.com/VeryApt/django-phone-field/blob/master/phone_field/phone_number.py
+    phone = models.CharField(max_length=20,
+                             validators=[
+                                 RegexValidator(
+                                     regex=r'^\d{12}$',
+                                     message=_('Enter a valid phone number'))
+                             ])
+    person = models.OneToOneField('Person', on_delete=models.CASCADE)
+    is_mobile = models.BooleanField(default=models.NOT_PROVIDED)
+
+    class Meta:
+        ordering = ('phone',)
+        unique_together = ('phone', 'tenant')
+
+    @property
+    def contact_info(self):
+        return self.phone
+
+    def __str__(self):
+        return self.contact_info
 
 
 class Secret(TenantFieldMixin, AuthSignatureMixin):
     key = models.CharField(max_length=128, null=False, blank=False)
     secret = models.CharField(max_length=256, null=False, blank=False)
+
+    @classmethod
+    def get_by_key(cls, tenant, key):
+        return cls.objects.get(key=key, tenant=tenant).secret
+
+    @classmethod
+    def get_all_as_dict(cls, tenant):
+        return {secret.key: secret.secret for secret in cls.objects.filter(tenant=tenant)}
 
     class Meta:
         unique_together = ('key', 'tenant')
