@@ -344,13 +344,46 @@ class SMSTemplate(TenantFieldMixin, AuthSignatureMixin):
 
 
 class Broadcast(TenantFieldMixin, AuthSignatureMixin):
+    SPEED_UNITS_CHOICES = (
+        (1, 'per Second'),
+        (2, 'per Minute'),
+        (3, 'per Hour'),
+        (4, 'per Hour')
+    )
     name = models.CharField(
         max_length=128, null=False, blank=False)
+    service = models.ForeignKey('Service', on_delete=models.CASCADE)
     tags = models.ManyToManyField('Tag', related_name='broadcasts')
     to_person = models.ManyToManyField('Person', related_name='broadcasts')
     to_tag = models.ManyToManyField('Tag', related_name='broadcasts')
     # @TODO:
     # to_segment = models.ManyToManyField('Segment', related_name='broadcasts')
+    sender = models.ForeignKey('Sender', on_delete=models.CASCADE)
+    # @TODO:
+    #  charset = models.
+
+    begin_datetime = models.DateTimeField()
+    window_star_time = models.TimeField()
+    window_end_time = models.TimeField()
+    # @TODO:
+    # validate
+    validity_period = models.IntegerField()  # Hours
+    speed = models.IntegerField()
+    speed_unit = models.IntegerField(choices=SPEED_UNITS_CHOICES)
+    # @TODO:
+    #     Opciones de Programación
+
+    # Comienzo de la comunicación
+    # Press the down arrow key to interact with the calendar and select a date. Press the question mark key to get the keyboard shortcuts for changing dates.
+    # Seleccione hora
+    # Zona horaria
+    # Seleccione zona horaria
+    # Ventana de horario de entrega
+    # Hora de inicio
+    # Seleccione hora
+    # Hora de finalización
+    # Seleccione hora
+    # Días
 
 # @TODO:
 # class Segment(TenantFieldMixin,AuthSignatureMixin):
