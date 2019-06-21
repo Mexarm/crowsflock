@@ -87,8 +87,15 @@ class Tenant(AuthSignatureMixin):
 
 
 class Service(AuthSignatureMixin):
+    EMAIL = 1
+    SMS = 2
+    CATEGORY_CHOICES = (
+        (EMAIL, 'email'),
+        (SMS, 'SMS Text Message')
+    )
     name = models.CharField(max_length=40)
     description = models.CharField(max_length=512)
+    category = models.IntegerField(choices=CATEGORY_CHOICES)
 
     def __str__(self):
         return self.name
@@ -169,9 +176,9 @@ class Tag(TenantFieldMixin, AuthSignatureMixin):
 
 
 class SimpleAttachment(TenantFieldMixin, AuthSignatureMixin):
-    LOCAL_STORAGE_PATH = 'attachments/'
-    UPLOAD_PREFIX = 'simple_attachments/'
-    file = models.FileField(upload_to=UPLOAD_PREFIX,
+    _local_storage_path = 'attachments/'
+    _upload_prefix = 'simple_attachments/'
+    file = models.FileField(upload_to=_upload_prefix,
                             storage=PrivateMediaStorage(),
                             blank=False, null=False)
 
@@ -192,18 +199,18 @@ class AdvancedAttachment(TenantFieldMixin, AuthSignatureMixin):
     S3 = 'S3'
     URL = 'URL'
 
-    LOCAL_STORAGE_PATH = 'attachments/'
-    S3_SESSION = None
+    local_storage_path = 'attachments/'
 
     SOURCE_CHOICES = (
         (S3, 'S3'),
         (URL, 'URL'),
     )
+
     S3_SAMPLE_CONFIG = {
         'auth': {
             'aws_access_key_id': "<SECRET:AWS_ACCESS_KEY_ID>",
             'aws_secret_access_key': "<SECRET:AWS_SECRET_ACCESS_KEY>",
-            'region': 'us-east-2'
+            'region_name': 'us-east-2'
         },
         'object': {
             'key': '<FIELD:subdir>/<FIELD:name>',
@@ -226,18 +233,6 @@ class AdvancedAttachment(TenantFieldMixin, AuthSignatureMixin):
     source = models.CharField(max_length=3, null=False,
                               blank=False, choices=SOURCE_CHOICES)
     setup = JSONField(blank=False, null=False)
-
-    def get_s3_session(self):
-        if not self.S3_SESSION:
-            import boto3
-            auth_setup = self.setup['auth']
-
-            self.S3_SESSION = boto3.Session(
-                aws_access_key_id=ak, aws_secret_access_key=sa)
-        return self.S3_SESSION
-
-    def download_file_s3(self, context):
-        pass
 
     def __str__(self):
         return f'{self.source} {self.description}'
@@ -330,3 +325,34 @@ class Secret(TenantFieldMixin, AuthSignatureMixin):
 
     def __str__(self):
         return f'Secret: Key={self.key}'
+
+
+class EmailTemplate(TenantFieldMixin, AuthSignatureMixin):
+    _upload_prefix = 'email_templates/'
+    name = models.CharField(max_length=128, null=False, blank=False)
+    # @TODO: Sanitize HTML
+    # https://stackoverflow.com/questions/10872405/django-allow-user-to-submit-valid-html-in-form-field
+    # https://stackoverflow.com/questions/699468/remove-html-tags-not-on-an-allowed-list-from-a-python-string
+    file = models.FileField(upload_to=_upload_prefix,
+                            storage=PrivateMediaStorage(),
+                            blank=False, null=False)
+
+
+class SMSTemplate(TenantFieldMixin, AuthSignatureMixin):
+    name = models.CharField(max_length=128, null=False, blank=False)
+    text = models.CharField(max_length=160, null=False, blank=False)
+
+
+class Broadcast(TenantFieldMixin, AuthSignatureMixin):
+    name = models.CharField(
+        max_length=128, null=False, blank=False)
+    tags = models.ManyToManyField('Tag', related_name='broadcasts')
+    to_person = models.ManyToManyField('Person', related_name='broadcasts')
+    to_tag = models.ManyToManyField('Tag', related_name='broadcasts')
+    # @TODO:
+    # to_segment = models.ManyToManyField('Segment', related_name='broadcasts')
+
+# @TODO:
+# class Segment(TenantFieldMixin,AuthSignatureMixin):
+#     name = models.CharField(max_length=128, null=False, blank=False)
+#     rules = ...
