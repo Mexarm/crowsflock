@@ -89,8 +89,8 @@ class SecretViewSet(viewsets.ModelViewSet):
     def get_serializer_context(self):
         return {'request': self.request}
 
-    def destroy(self, request, *args, **kwargs):
-        pass
+    # def destroy(self, request, *args, **kwargs):
+    #     pass
 
 # class StorageCredentialViewSet(viewsets.ModelViewSet):
 #     serializer_class = StorageCredentialSerializer

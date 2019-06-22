@@ -11,8 +11,8 @@ from django.db import transaction  # ,DatabaseError
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
 from cfsite.storage_backends import PrivateMediaStorage
-from .exceptions import NotEnougthFundsError
-from .mixins import AuthSignatureMixin, TenantFieldMixin
+from cfapp.exceptions import NotEnougthFundsError
+from cfapp.mixins import AuthSignatureMixin, TenantFieldMixin
 
 
 class Profile(models.Model):
@@ -160,18 +160,27 @@ class Tag(TenantFieldMixin, AuthSignatureMixin):
 
     def clean_fields(self, exclude=None):
         super().clean_fields(exclude=exclude)
+        slug = slugify(self.tag)
         if (
                 exclude and
                 'slug' in exclude and
                 Tag.objects.filter(
                     tenant=self.tenant,
-                    slug=slugify(self.tag)
+                    slug=slug
                 ).exists()
         ):
-            raise ValidationError(_('Tag already exists'))
+            raise ValidationError(_('a slug for this tag already exists'))
+
+    # def clean_tag(self, tag):
+    #     self.slug = slugify(tag)
+    #     tenant = self.tenant
+    #     if Tag.objects.filter(slug=self.slug, tenant=tenant).exists():
+    #         raise ValidationError(_('slug for this tag already exists'))
+    #     return tag
 
     def save(self, *args, **kwargs):  # pylint: disable=W0221
         self.slug = slugify(self.tag)
+        # self.clean_tag(self.tag)
         super(Tag, self).save(*args, **kwargs)
 
 
@@ -343,34 +352,48 @@ class SMSTemplate(TenantFieldMixin, AuthSignatureMixin):
     text = models.CharField(max_length=160, null=False, blank=False)
 
 
-class Broadcast(TenantFieldMixin, AuthSignatureMixin):
-    SPEED_UNITS_CHOICES = (
-        (1, 'per Second'),
-        (2, 'per Minute'),
-        (3, 'per Hour'),
-        (4, 'per Hour')
-    )
-    name = models.CharField(
-        max_length=128, null=False, blank=False)
-    service = models.ForeignKey('Service', on_delete=models.CASCADE)
-    tags = models.ManyToManyField('Tag', related_name='broadcasts')
-    to_person = models.ManyToManyField('Person', related_name='broadcasts')
-    to_tag = models.ManyToManyField('Tag', related_name='broadcasts')
-    # @TODO:
-    # to_segment = models.ManyToManyField('Segment', related_name='broadcasts')
-    sender = models.ForeignKey('Sender', on_delete=models.CASCADE)
-    # @TODO:
-    #  charset = models.
+# class Broadcast(TenantFieldMixin, AuthSignatureMixin):
+#     SPEED_UNITS_CHOICES = (
+#         (1, 'per Second'),
+#         (2, 'per Minute'),
+#         (3, 'per Hour'),
+#         (4, 'per Day')
+#     )
 
-    begin_datetime = models.DateTimeField()
-    window_star_time = models.TimeField()
-    window_end_time = models.TimeField()
-    # @TODO:
-    # validate
-    validity_period = models.IntegerField()  # Hours
-    speed = models.IntegerField()
-    speed_unit = models.IntegerField(choices=SPEED_UNITS_CHOICES)
-    # @TODO:
+#     WEEKDAYS = {k: v
+#                 for k, v in enumerate([
+#                     'Monday',
+#                     'Tuesday',
+#                     'Wednesday',
+#                     'Thursday',
+#                     'Friday',
+#                     'Saturday',
+#                     'Sunday'
+#                 ])}
+
+#     name = models.CharField(
+#         max_length=128, null=False, blank=False)
+#     service = models.ForeignKey('Service', on_delete=models.CASCADE)
+#     tags = models.ManyToManyField('Tag', related_name='broadcasts')
+#     to_person = models.ManyToManyField('Person', related_name='broadcasts')
+#     to_tag = models.ManyToManyField('Tag', related_name='broadcasts')
+#     # @TODO:
+#     # to_segment = models.ManyToManyField('Segment', related_name='broadcasts')
+#     #sender = models.ForeignKey('Sender', on_delete=models.CASCADE)
+#     # @TODO:
+#     #  charset = models.
+
+#     begin_datetime = models.DateTimeField()
+#     window_star_time = models.TimeField()
+#     window_end_time = models.TimeField()
+#     # @TODO:
+#     # validate
+#     validity_period = models.IntegerField()  # Hours
+#     speed = models.IntegerField()
+#     speed_unit = models.IntegerField(choices=SPEED_UNITS_CHOICES)
+#     # weeksdays, where Monday is 0 and Sunday is 6.
+#     weekdays = JSONField(default=dict([(i, True) for i in range(7)]))
+#     # @TODO:
     #     Opciones de Programación
 
     # Comienzo de la comunicación
