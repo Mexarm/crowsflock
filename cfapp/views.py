@@ -64,30 +64,44 @@ class TenantViewSet(viewsets.ModelViewSet):
 #     def get_queryset(self):
 #         return BalanceEntry.objects.filter(tenant__in=user_tenants(self.request))
 
+class CreateUpdateUserMixin(object):
+    def perform_create(self, serializer):
+        serializer.save(tenant=self.request.user.profile.tenant,
+                        created_by=self.request.user)
 
-class TagViewSet(viewsets.ModelViewSet):
+    def perform_update(self, serializer):
+        serializer.save(tenant=self.request.user.profile.tenant,
+                        modified_by=self.request.user)
+
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+
+class TagViewSet(CreateUpdateUserMixin, viewsets.ModelViewSet):
     serializer_class = TagSerializer
     permission_classes = (permissions.IsAuthenticated, UserIsTenantMember)
 
     def get_queryset(self):
         return Tag.objects.filter(tenant=self.request.user.profile.tenant)
 
-    def get_serializer_context(self):
-        return {'request': self.request}
+    # def perform_create(self, serializer):
+    #     serializer.save(tenant=self.request.user.profile.tenant,
+    #                     created_by=self.request.user)
 
-    def perform_create(self, serializer):
-        serializer.save(tenant=self.request.user.profile.tenant)
+    # def perform_update(self, serializer):
+    #     serializer.save(tenant=self.request.user.profile.tenant,
+    #                     modified_by=self.request.user)
 
 
-class SecretViewSet(viewsets.ModelViewSet):
+class SecretViewSet(CreateUpdateUserMixin, viewsets.ModelViewSet):
     serializer_class = SecretSerializer
     permission_classes = (permissions.IsAuthenticated, UserIsTenantMember)
 
     def get_queryset(self):
         return Secret.objects.filter(tenant=self.request.user.profile.tenant)
 
-    def get_serializer_context(self):
-        return {'request': self.request}
+    # def get_serializer_context(self):
+    #     return {'request': self.request}
 
     # def destroy(self, request, *args, **kwargs):
     #     pass
