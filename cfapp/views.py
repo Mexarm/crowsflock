@@ -65,19 +65,18 @@ class TenantViewSet(viewsets.ModelViewSet):
 #         return BalanceEntry.objects.filter(tenant__in=user_tenants(self.request))
 
 class CreateUpdateUserMixin(object):
-    def perform_create(self, serializer):
-        serializer.save(tenant=self.request.user.profile.tenant,
-                        created_by=self.request.user)
+    # def perform_create(self, serializer):
+    #     serializer.save(created_by=self.request.user)
 
-    def perform_update(self, serializer):
-        serializer.save(tenant=self.request.user.profile.tenant,
-                        modified_by=self.request.user)
+    # def perform_update(self, serializer):
+    #     serializer.save(modified_by=self.request.user)
 
-    def get_serializer_context(self):
-        return {'request': self.request}
+    # def get_serializer_context(self):
+    #     return {'request': self.request}
+    pass
 
 
-class TagViewSet(CreateUpdateUserMixin, viewsets.ModelViewSet):
+class TagViewSet(viewsets.ModelViewSet):
     serializer_class = TagSerializer
     permission_classes = (permissions.IsAuthenticated, UserIsTenantMember)
 
@@ -93,7 +92,7 @@ class TagViewSet(CreateUpdateUserMixin, viewsets.ModelViewSet):
     #                     modified_by=self.request.user)
 
 
-class SecretViewSet(CreateUpdateUserMixin, viewsets.ModelViewSet):
+class SecretViewSet(viewsets.ModelViewSet):
     serializer_class = SecretSerializer
     permission_classes = (permissions.IsAuthenticated, UserIsTenantMember)
 
