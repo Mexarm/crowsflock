@@ -8,7 +8,6 @@ from .models import (
     # Profile,
     # Tenant,
     Company,
-    Tag,
     Service,
     AccountEntry,
     Rate,
@@ -81,8 +80,8 @@ class AdminCompany(AdminAuthSignature):
         return False
 
 
-class AdminTag(AdminAuthSignature):
-    list_display = ('tag', 'slug', 'created_by', 'created_on')
+# class AdminTag(AdminAuthSignature):
+#     list_display = ('tag', 'slug', 'created_by', 'created_on')
 
 
 class AdminService(AdminAuthSignature):
@@ -120,6 +119,8 @@ class AdminAccountEntry(AdminAuthSignature):
         return True
 
     def has_add_permission(self, request, obj=None):
+        if not Company.get():
+            return False
         if obj:
             if obj.entry_type == obj.CHARGE:
                 return False
@@ -145,4 +146,4 @@ admin.site.register(Company, AdminCompany)
 admin.site.register(Service, AdminService)
 admin.site.register(AccountEntry, AdminAccountEntry)
 admin.site.register(Rate, AdminRate)
-admin.site.register(Tag, AdminTag)
+# admin.site.register(Tag, AdminTag)

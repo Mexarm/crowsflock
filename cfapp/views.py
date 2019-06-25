@@ -1,10 +1,15 @@
-from rest_framework import viewsets, permissions, mixins
+from rest_framework import viewsets, mixins
 #from rest_framework.decorators import action
 #from rest_framework.response import Response
-from cfapp import models
-from cfapp import serializers
+from cfapp.models import (
+    Company,
+    Service,
+    Secret,
+    Tag
+)
 
-# from cfapp.permissions import IsOwner
+from cfapp import serializers
+from cfapp.permissions import ExtendedDjangoModelPermissions
 
 # mixins.CreateModelMixin,
 # mixins.RetrieveModelMixin,
@@ -15,23 +20,42 @@ from cfapp import serializers
 
 # class TagViewSet(viewsets.ModelViewSet):
 
+# mixins.CreateModelMixin,
+# mixins.RetrieveModelMixin,
+#  mixins.UpdateModelMixin,
+#  mixins.DestroyModelMixin,
+# mixins.ListModelMixin,
+# viewsets.GenericViewSet
+
+
+class CompanyViewSet(mixins.RetrieveModelMixin,
+                     mixins.ListModelMixin,
+                     viewsets.GenericViewSet):
+    serializer_class = serializers.CompanySerializer
+    permission_classes = (ExtendedDjangoModelPermissions,)
+    queryset = Company.objects.all()
+
+
+class ServiceViewSet(mixins.RetrieveModelMixin,
+                     mixins.ListModelMixin,
+                     viewsets.GenericViewSet):
+    serializer_class = serializers.ServiceSerializer
+    permission_classes = (ExtendedDjangoModelPermissions,)
+    queryset = Service.objects.all()
+
 
 class TagViewSet(mixins.CreateModelMixin,
                  mixins.RetrieveModelMixin,
-                 #  mixins.UpdateModelMixin,
-                 #  mixins.DestroyModelMixin,
                  mixins.ListModelMixin,
                  viewsets.GenericViewSet):
     serializer_class = serializers.TagSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (ExtendedDjangoModelPermissions,)
 
     def get_queryset(self):
-        return models.Tag.objects.filter(tenant=self.request.user.profile.tenant)
+        return Tag.objects.all()
 
 
 class SecretViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.SecretSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def get_queryset(self):
-        return models.Secret.objects.filter(tenant=self.request.user.profile.tenant)
+    permission_classes = (ExtendedDjangoModelPermissions,)
+    queryset = Secret.objects.all()

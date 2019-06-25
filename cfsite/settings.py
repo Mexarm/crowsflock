@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'storages',
     'rest_framework',
     'rest_framework.authtoken',
+    'django_filters',
     'guardian',
 
     'cfapp.apps.CfappConfig'

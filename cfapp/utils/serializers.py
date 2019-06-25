@@ -55,8 +55,8 @@ class UpdateOnlyDefault(serializers.CreateOnlyDefault):
 
 
 class CommonFields(serializers.Serializer):
-    tenant = serializers.HiddenField(default=FromContext(
-        lambda context: context.get('request').user.profile.tenant))
+    # tenant = serializers.HiddenField(default=FromContext(
+    #     lambda context: context.get('request').user.profile.tenant))
     created_by = MyPrimaryKeyRelatedField(required=False,
                                           default=serializers.CreateOnlyDefault(
                                               serializers.CurrentUserDefault()))
@@ -64,6 +64,8 @@ class CommonFields(serializers.Serializer):
                                            default=UpdateOnlyDefault(
                                                serializers.CurrentUserDefault()))
     common_fields = ('created_by',
-                     'created_on', 'modified_by', 'modified_on', 'tenant')
+                     'created_on', 'modified_by', 'modified_on'
+                     #  , 'tenant'
+                     )
     read_only_fields = ('created_by',
                         'created_on', 'modified_by', 'modified_on')

@@ -5,6 +5,12 @@ from . import views
 router = DefaultRouter()  # pylint: disable=C0103
 
 #                 base_name='BalanceEntry')
+router.register(r'company',
+                views.CompanyViewSet,
+                base_name='company')
+router.register(r'service',
+                views.ServiceViewSet,
+                base_name='service')
 router.register(r'tag',
                 views.TagViewSet,
                 base_name='Tag')

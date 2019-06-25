@@ -3,9 +3,10 @@ import base64
 from decimal import Decimal
 from django.db import models
 from django.utils.text import slugify
+from django.utils.decorators import classonlymethod
 from django.utils.translation import ugettext_lazy as _
 from django.core.validators import MinValueValidator, RegexValidator
-from django.core.exceptions import ValidationError
+# from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.db import transaction  # ,DatabaseError
 from django.conf import settings
@@ -15,39 +16,30 @@ from cfapp.exceptions import NotEnougthFundsError
 from cfapp.mixins import AuthSignatureMixin
 
 
-# class OneRecordManager(models.Manager):
-#     def get_queryset(self):
-#         return super().get_queryset().first()
-
-
 class Company(AuthSignatureMixin):
-    # company = OneRecordManager()
-
     code = models.CharField(max_length=64, null=False, blank=False)
-
     razon_social = models.CharField(max_length=128, null=False, blank=False)
     RFC = models.CharField(max_length=13, blank=True, null=True)
-
     address = models.CharField(max_length=256,
                                blank=True)
     country = models.CharField(max_length=64)
     contact_name = models.CharField(max_length=80)
     contact_phone = models.CharField(max_length=30)
-
     balance = models.DecimalField(_('balance'),
                                   decimal_places=3, max_digits=12,
                                   default=Decimal('0.000'))
-    # balance = models.FloatField(default=0)
-    # max_credit = models.FloatField(default=0.0)
     max_credit = models.DecimalField(_('credit limit'),
                                      default=Decimal('0.0'), decimal_places=2,
                                      max_digits=12,
                                      validators=[MinValueValidator(Decimal('0.0'))])
     services = models.ManyToManyField('Service')
 
+    @classonlymethod
+    def get(cls):
+        return cls.objects.all().first()
+
     def update_balance(self):
         field = 'amount'
-        # company = self.company.all()
         with transaction.atomic():
             payments_aggregate = AccountEntry.objects.filter(
                 entry_type=AccountEntry.PAYMENT).aggregate(Sum(field))
@@ -77,6 +69,7 @@ class Company(AuthSignatureMixin):
         return entry
 
     class Meta:
+        ordering = ('id',)
         verbose_name = 'Company'
         verbose_name_plural = 'Companies'
 
@@ -95,12 +88,16 @@ class Service(AuthSignatureMixin):
                             null=False, blank=False)
     description = models.CharField(max_length=512)
     category = models.IntegerField(choices=CATEGORY_CHOICES)
+    is_active = models.BooleanField()
 
     def __str__(self):
         return self.name
 
 
 class AccountEntry(AuthSignatureMixin):
+    """
+    Stores the Payments or Charges
+    """
 
     PAYMENT = 'PAYMENT'
     CHARGE = 'CHARGE'
@@ -125,10 +122,6 @@ class AccountEntry(AuthSignatureMixin):
     def __str__(self):
         return f'{self.entry_type} ${self.amount}'
 
-    # @property
-    # def fmt_amount(self):
-    #     return f'${self.amount:,.2f}'
-
 
 class Rate(AuthSignatureMixin):
     service = models.ForeignKey('Service', on_delete=models.CASCADE)
@@ -141,9 +134,9 @@ class Rate(AuthSignatureMixin):
 
 class Tag(AuthSignatureMixin):
 
-    tag = models.CharField(max_length=32,
-                           null=False,
-                           blank=False, unique=True)
+    name = models.CharField(max_length=32,
+                            null=False,
+                            blank=False, unique=True)
     slug = models.SlugField(max_length=32,
                             null=False,
                             blank=False,
@@ -155,20 +148,20 @@ class Tag(AuthSignatureMixin):
         # unique_together = ('slug', 'tenant')
 
     def __str__(self):
-        return self.tag
+        return self.name
 
-    def clean_fields(self, exclude=None):
-        super().clean_fields(exclude=exclude)
-        slug = slugify(self.tag)
-        if (
-                exclude and
-                'slug' in exclude and
-                Tag.objects.filter(
-                    # tenant=self.tenant,
-                    slug=slug
-                ).exists()
-        ):
-            raise ValidationError(_('a slug for this tag already exists'))
+    # def clean_fields(self, exclude=None):
+    #     super().clean_fields(exclude=exclude)
+    #     slug = slugify(self.tag)
+    #     if (
+    #             exclude and
+    #             'slug' in exclude and
+    #             Tag.objects.filter(
+    #                 # tenant=self.tenant,
+    #                 slug=slug
+    #             ).exists()
+    #     ):
+    #         raise ValidationError(_('a slug for this tag already exists'))
 
     # def clean_tag(self, tag):
     #     self.slug = slugify(tag)
@@ -178,7 +171,7 @@ class Tag(AuthSignatureMixin):
     #     return tag
 
     def save(self, *args, **kwargs):  # pylint: disable=W0221
-        self.slug = slugify(self.tag)
+        self.slug = slugify(self.name)
         # self.clean_tag(self.tag)
         super(Tag, self).save(*args, **kwargs)
 
