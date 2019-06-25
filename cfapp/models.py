@@ -3,6 +3,7 @@ import base64
 from decimal import Decimal
 from django.db import models
 from django.utils.text import slugify
+from django.utils.decorators import classonlymethod
 from django.utils.translation import ugettext_lazy as _
 from django.core.validators import MinValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
@@ -12,29 +13,22 @@ from django.conf import settings
 from django.contrib.postgres.fields import JSONField
 from cfsite.storage_backends import PrivateMediaStorage
 from cfapp.exceptions import NotEnougthFundsError
-from cfapp.mixins import AuthSignatureMixin, TenantFieldMixin
+from cfapp.mixins import AuthSignatureMixin
 
 
-class Profile(models.Model):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        primary_key=True
-    )
-    tenant = models.ForeignKey(
-        'Tenant', on_delete=models.CASCADE, blank=False, null=True)
+class Company(AuthSignatureMixin):
 
-    def __str__(self):
-        return f'{self.user.username} has tenant {self.tenant}'
+    code = models.CharField(max_length=64, null=False, blank=False)
 
+    razon_social = models.CharField(max_length=128, null=False, blank=False)
+    RFC = models.CharField(max_length=13, blank=True, null=True)
 
-class Tenant(AuthSignatureMixin):
+    address = models.CharField(max_length=256,
+                               blank=True)
+    country = models.CharField(max_length=64)
+    contact_name = models.CharField(max_length=80)
+    contact_phone = models.CharField(max_length=30)
 
-    tenant = models.CharField(max_length=128,
-                              unique=True,
-                              blank=False)
-    description = models.CharField(max_length=256,
-                                   blank=True)
     balance = models.DecimalField(_('balance'),
                                   decimal_places=2, max_digits=12,
                                   default=Decimal('0.0'))
@@ -46,36 +40,38 @@ class Tenant(AuthSignatureMixin):
                                      validators=[MinValueValidator(Decimal('0.0'))])
     services = models.ManyToManyField('Service')
 
-    def update_balance(self):
+    @classonlymethod
+    def update_balance(cls):
         field = 'amount'
-
+        company = cls.objects.all()[0]
         with transaction.atomic():
-            payments_aggregate = self.accountentry_set.filter(
+            payments_aggregate = AccountEntry.objects.filter(
                 entry_type=AccountEntry.PAYMENT).aggregate(Sum(field))
-            payments = payments_aggregate[field + '__sum'] or 0.0
-            charges_aggregate = self.accountentry_set.filter(
+            payments = payments_aggregate[field + '__sum'] or Decimal('0.0')
+            charges_aggregate = AccountEntry.objects.filter(
                 entry_type=AccountEntry.CHARGE).aggregate(Sum(field))
-            charges = charges_aggregate[field + '__sum'] or 0.0
-            self.balance = payments - charges
-            self.save()
-        return self.balance
+            charges = charges_aggregate[field + '__sum'] or Decimal('0.0')
+            company.balance = payments - charges
+            company.save()
+        return company.balance
 
-    def charge(self, amount, **kwargs):
+    @classonlymethod
+    def charge(cls, amount, **kwargs):
         if amount <= 0:
             raise ValueError(_('cannot charge negative or zero amounts'))
-
+        company = cls.objects.all()[0]
         with transaction.atomic():
-            self.update_balance()
-            available = self.balance + self.max_credit
+            cls.update_balance()
+            available = company.balance + company.max_credit
             if available >= amount:
-                data = dict(entry_type=AccountEntry.CHARGE,
-                            amount=amount, tenant=self)
-                data.update(kwargs)
+                data = dict(**kwargs)
+                data.update(entry_type=AccountEntry.CHARGE,
+                            amount=amount)
                 entry = AccountEntry.objects.create(**data)
             else:
                 raise NotEnougthFundsError(_(
                     'not enougth fund, make a payment or increase credit'))
-            self.update_balance()
+            cls.update_balance()
         return entry
 
     class Meta:
@@ -83,7 +79,7 @@ class Tenant(AuthSignatureMixin):
         verbose_name_plural = 'Companies'
 
     def __str__(self):
-        return self.tenant
+        return self.code
 
 
 class Service(AuthSignatureMixin):
@@ -93,7 +89,8 @@ class Service(AuthSignatureMixin):
         (EMAIL, 'email'),
         (SMS, 'SMS Text Message')
     )
-    name = models.CharField(max_length=40)
+    name = models.CharField(max_length=40, unique=True,
+                            null=False, blank=False)
     description = models.CharField(max_length=512)
     category = models.IntegerField(choices=CATEGORY_CHOICES)
 
@@ -101,7 +98,7 @@ class Service(AuthSignatureMixin):
         return self.name
 
 
-class AccountEntry(TenantFieldMixin, AuthSignatureMixin):
+class AccountEntry(AuthSignatureMixin):
 
     PAYMENT = 'PAYMENT'
     CHARGE = 'CHARGE'
@@ -124,14 +121,14 @@ class AccountEntry(TenantFieldMixin, AuthSignatureMixin):
         decimal_places=2, max_digits=12, blank=True, null=True)
 
     def __str__(self):
-        return f'{self.tenant} {self.entry_type} ${self.amount}'
+        return f'{self.entry_type} ${self.amount}'
 
-    @property
-    def fmt_amount(self):
-        return f'${self.amount:,.2f}'
+    # @property
+    # def fmt_amount(self):
+    #     return f'${self.amount:,.2f}'
 
 
-class Rate(TenantFieldMixin, AuthSignatureMixin):
+class Rate(AuthSignatureMixin):
     service = models.ForeignKey('Service', on_delete=models.CASCADE)
     unit_price = models.DecimalField(
         decimal_places=4, max_digits=12, blank=False, null=False)
@@ -140,20 +137,20 @@ class Rate(TenantFieldMixin, AuthSignatureMixin):
     valid_until = models.DateField()
 
 
-class Tag(TenantFieldMixin, AuthSignatureMixin):
+class Tag(AuthSignatureMixin):
 
     tag = models.CharField(max_length=32,
                            null=False,
-                           blank=False)
+                           blank=False, unique=True)
     slug = models.SlugField(max_length=32,
                             null=False,
                             blank=False,
                             editable=False,
-                            validators=[])
+                            unique=True)
 
     class Meta:
         ordering = ('slug',)
-        unique_together = ('slug', 'tenant')
+        # unique_together = ('slug', 'tenant')
 
     def __str__(self):
         return self.tag
@@ -165,7 +162,7 @@ class Tag(TenantFieldMixin, AuthSignatureMixin):
                 exclude and
                 'slug' in exclude and
                 Tag.objects.filter(
-                    tenant=self.tenant,
+                    # tenant=self.tenant,
                     slug=slug
                 ).exists()
         ):
@@ -184,7 +181,7 @@ class Tag(TenantFieldMixin, AuthSignatureMixin):
         super(Tag, self).save(*args, **kwargs)
 
 
-class SimpleAttachment(TenantFieldMixin, AuthSignatureMixin):
+class SimpleAttachment(AuthSignatureMixin):
     _local_storage_path = 'attachments/'
     _upload_prefix = 'simple_attachments/'
     file = models.FileField(upload_to=_upload_prefix,
@@ -204,7 +201,7 @@ class SimpleAttachment(TenantFieldMixin, AuthSignatureMixin):
 #     UPLOAD_PREFIX = 'attachment_builder_templates/'
 
 
-class AdvancedAttachment(TenantFieldMixin, AuthSignatureMixin):
+class AdvancedAttachment(AuthSignatureMixin):
     S3 = 'S3'
     URL = 'URL'
 
@@ -238,7 +235,8 @@ class AdvancedAttachment(TenantFieldMixin, AuthSignatureMixin):
         'name': '<FIELD:name>'
     }
 
-    description = models.CharField(max_length=128, blank=False, null=False)
+    description = models.CharField(
+        max_length=128, blank=False, null=False, unique=True)
     source = models.CharField(max_length=3, null=False,
                               blank=False, choices=SOURCE_CHOICES)
     setup = JSONField(blank=False, null=False)
@@ -247,7 +245,7 @@ class AdvancedAttachment(TenantFieldMixin, AuthSignatureMixin):
         return f'{self.source} {self.description}'
 
 
-class Person(TenantFieldMixin, AuthSignatureMixin):
+class Person(AuthSignatureMixin):
     external_id = models.CharField(max_length=128)
     first_name = models.CharField(max_length=80)
     second_name = models.CharField(max_length=80)
@@ -272,16 +270,18 @@ class Person(TenantFieldMixin, AuthSignatureMixin):
         return data
 
     class Meta:
-        unique_together = ('tenant', 'external_id')
+        ordering = ('created_on',)
+        # unique_together = ('tenant', 'external_id')
 
 
-class EmailContact(TenantFieldMixin, AuthSignatureMixin):
-    email = models.EmailField(max_length=256)
+class EmailContact(AuthSignatureMixin):
+    email = models.EmailField(
+        max_length=256, unique=True, null=False, blank=False)
     person = models.OneToOneField('Person', on_delete=models.CASCADE)
 
     class Meta:
         ordering = ('email',)
-        unique_together = ('email', 'tenant')
+        # unique_together = ('email', 'tenant')
 
     @property
     def contact_info(self):
@@ -291,7 +291,7 @@ class EmailContact(TenantFieldMixin, AuthSignatureMixin):
         return self.contact_info
 
 
-class PhoneContact(TenantFieldMixin, AuthSignatureMixin):
+class PhoneContact(AuthSignatureMixin):
     # @TODO: validate phone number
     # https://github.com/stefanfoulis/django-phonenumber-field
     # https://github.com/VeryApt/django-phone-field/blob/master/phone_field/phone_number.py
@@ -300,13 +300,13 @@ class PhoneContact(TenantFieldMixin, AuthSignatureMixin):
                                  RegexValidator(
                                      regex=r'^\d{12}$',
                                      message=_('Enter a valid phone number'))
-                             ])
+                             ], unique=True, null=False, blank=False)
     person = models.OneToOneField('Person', on_delete=models.CASCADE)
     is_mobile = models.BooleanField(default=models.NOT_PROVIDED)
 
     class Meta:
         ordering = ('phone',)
-        unique_together = ('phone', 'tenant')
+        # unique_together = ('phone', 'tenant')
 
     @property
     def contact_info(self):
@@ -316,8 +316,9 @@ class PhoneContact(TenantFieldMixin, AuthSignatureMixin):
         return self.contact_info
 
 
-class Secret(TenantFieldMixin, AuthSignatureMixin):
-    key = models.CharField(max_length=128, null=False, blank=False)
+class Secret(AuthSignatureMixin):
+    key = models.CharField(max_length=128, null=False,
+                           blank=False, unique=True)
     secret = models.CharField(max_length=256, null=False, blank=False)
 
     @classmethod
@@ -329,14 +330,14 @@ class Secret(TenantFieldMixin, AuthSignatureMixin):
         return {secret.key: secret.secret for secret in cls.objects.filter(tenant=tenant)}
 
     class Meta:
-        unique_together = ('key', 'tenant')
+        # unique_together = ('key', 'tenant')
         ordering = ('key',)
 
     def __str__(self):
         return f'Secret: Key={self.key}'
 
 
-class EmailTemplate(TenantFieldMixin, AuthSignatureMixin):
+class EmailTemplate(AuthSignatureMixin):
     _upload_prefix = 'email_templates/'
     name = models.CharField(max_length=128, null=False, blank=False)
     # @TODO: Sanitize HTML
@@ -347,7 +348,7 @@ class EmailTemplate(TenantFieldMixin, AuthSignatureMixin):
                             blank=False, null=False)
 
 
-class SMSTemplate(TenantFieldMixin, AuthSignatureMixin):
+class SMSTemplate(AuthSignatureMixin):
     name = models.CharField(max_length=128, null=False, blank=False)
     text = models.CharField(max_length=160, null=False, blank=False)
 

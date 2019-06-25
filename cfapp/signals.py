@@ -5,20 +5,20 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 # from django.conf import settings
 # from guardian.shortcuts import assign_perm
-from .models import AccountEntry
+from cfapp.models import AccountEntry, Company
 
 
 @receiver(post_save, sender=AccountEntry)
 def accountentry_post_save(sender, **kwargs):
     accountentry, created = kwargs['instance'], kwargs['created']
-    if created and accountentry.entry_type == accountentry.TYPE_PAYMENT and accountentry.tenant:
-        accountentry.tenant.update_balance()
+    if created and accountentry.entry_type == accountentry.PAYMENT:
+        Company.update_balance()
 
 
 @receiver(post_delete, sender=AccountEntry)
 def accountentry_post_delete(sender, **kwargs):
-    accountentry = kwargs['instance']
-    accountentry.tenant.update_balance()
+    #     accountentry = kwargs['instance']
+    Company.update_balance()
 # @receiver(post_save, sender=User)
 # def user_post_save(sender, **kwargs):
 #     """

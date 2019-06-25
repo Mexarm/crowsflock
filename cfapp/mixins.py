@@ -23,11 +23,11 @@ class AuthSignatureMixin(models.Model):
         abstract = True
 
 
-class TenantFieldMixin(models.Model):
-    """Abstract class that defines a tenant on models"""
+# class TenantFieldMixin(models.Model):
+#     """Abstract class that defines a tenant on models"""
 
-    tenant = models.ForeignKey('Tenant',
-                               on_delete=models.CASCADE)
+#     tenant = models.ForeignKey('Tenant',
+#                                on_delete=models.CASCADE)
 
-    class Meta:
-        abstract = True
+#     class Meta:
+#         abstract = True
