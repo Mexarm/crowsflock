@@ -12,13 +12,13 @@ from cfapp.models import AccountEntry, Company
 def accountentry_post_save(sender, **kwargs):
     accountentry, created = kwargs['instance'], kwargs['created']
     if created and accountentry.entry_type == accountentry.PAYMENT:
-        Company.update_balance()
+        Company.objects.all().first().update_balance()
 
 
 @receiver(post_delete, sender=AccountEntry)
 def accountentry_post_delete(sender, **kwargs):
     #     accountentry = kwargs['instance']
-    Company.update_balance()
+    Company.objects.all().first().update_balance()
 # @receiver(post_save, sender=User)
 # def user_post_save(sender, **kwargs):
 #     """

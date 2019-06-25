@@ -3,7 +3,6 @@ import base64
 from decimal import Decimal
 from django.db import models
 from django.utils.text import slugify
-from django.utils.decorators import classonlymethod
 from django.utils.translation import ugettext_lazy as _
 from django.core.validators import MinValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
@@ -16,7 +15,13 @@ from cfapp.exceptions import NotEnougthFundsError
 from cfapp.mixins import AuthSignatureMixin
 
 
+# class OneRecordManager(models.Manager):
+#     def get_queryset(self):
+#         return super().get_queryset().first()
+
+
 class Company(AuthSignatureMixin):
+    # company = OneRecordManager()
 
     code = models.CharField(max_length=64, null=False, blank=False)
 
@@ -30,8 +35,8 @@ class Company(AuthSignatureMixin):
     contact_phone = models.CharField(max_length=30)
 
     balance = models.DecimalField(_('balance'),
-                                  decimal_places=2, max_digits=12,
-                                  default=Decimal('0.0'))
+                                  decimal_places=3, max_digits=12,
+                                  default=Decimal('0.000'))
     # balance = models.FloatField(default=0)
     # max_credit = models.FloatField(default=0.0)
     max_credit = models.DecimalField(_('credit limit'),
@@ -40,10 +45,9 @@ class Company(AuthSignatureMixin):
                                      validators=[MinValueValidator(Decimal('0.0'))])
     services = models.ManyToManyField('Service')
 
-    @classonlymethod
-    def update_balance(cls):
+    def update_balance(self):
         field = 'amount'
-        company = cls.objects.all()[0]
+        # company = self.company.all()
         with transaction.atomic():
             payments_aggregate = AccountEntry.objects.filter(
                 entry_type=AccountEntry.PAYMENT).aggregate(Sum(field))
@@ -51,18 +55,16 @@ class Company(AuthSignatureMixin):
             charges_aggregate = AccountEntry.objects.filter(
                 entry_type=AccountEntry.CHARGE).aggregate(Sum(field))
             charges = charges_aggregate[field + '__sum'] or Decimal('0.0')
-            company.balance = payments - charges
-            company.save()
-        return company.balance
+            self.balance = payments - charges
+            self.save()
+        return self.balance
 
-    @classonlymethod
-    def charge(cls, amount, **kwargs):
+    def charge(self, amount, **kwargs):
         if amount <= 0:
             raise ValueError(_('cannot charge negative or zero amounts'))
-        company = cls.objects.all()[0]
         with transaction.atomic():
-            cls.update_balance()
-            available = company.balance + company.max_credit
+            self.update_balance()
+            available = self.balance + self.max_credit
             if available >= amount:
                 data = dict(**kwargs)
                 data.update(entry_type=AccountEntry.CHARGE,
@@ -71,7 +73,7 @@ class Company(AuthSignatureMixin):
             else:
                 raise NotEnougthFundsError(_(
                     'not enougth fund, make a payment or increase credit'))
-            cls.update_balance()
+            self.update_balance()
         return entry
 
     class Meta:
@@ -111,7 +113,7 @@ class AccountEntry(AuthSignatureMixin):
     entry_type = models.CharField(
         max_length=settings.CFAPP_MAX_KEY_LENGTH, choices=TYPE_CHOICES)
     amount = models.DecimalField(null=False, blank=False,
-                                 decimal_places=2, max_digits=12,
+                                 decimal_places=3, max_digits=12,
                                  validators=[MinValueValidator(Decimal('0.01'))])
     reference = models.CharField(max_length=100, blank=True)
     service = models.ForeignKey(

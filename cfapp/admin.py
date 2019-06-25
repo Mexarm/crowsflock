@@ -74,6 +74,12 @@ class AdminCompany(AdminAuthSignature):
     readonly_fields = ('balance',)
     form = CompanyForm
 
+    def has_add_permission(self, request, obj=None):
+        return False if Company.objects.all().count() > 0 else True
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 class AdminTag(AdminAuthSignature):
     list_display = ('tag', 'slug', 'created_by', 'created_on')
@@ -107,6 +113,17 @@ class AdminAccountEntry(AdminAuthSignature):
             return ('amount', 'entry_type')
         return self.readonly_fields
 
+    def has_delete_permission(self, request, obj=None):
+        if obj:
+            if obj.entry_type == obj.CHARGE:
+                return False
+        return True
+
+    def has_add_permission(self, request, obj=None):
+        if obj:
+            if obj.entry_type == obj.CHARGE:
+                return False
+        return True
     # def get_fieldsets(self, request, obj=None):
     #     if obj:
     #         return self.fieldsets
