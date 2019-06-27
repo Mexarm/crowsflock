@@ -53,13 +53,8 @@ export default {
   data() {
     return {
       headers: [
-        {
-          text: "id",
-          // align: "left",
-          // sortable: false,
-          value: "id"
-        },
-        { text: "name", value: "name" },
+        { text: "id", value: "id" },
+        { text: "name", align: "left", sortable: false, value: "name" },
         { text: "created by", value: "created_by" },
         { text: "creted on ", value: "created_on" },
         { text: "modified by", value: "modified_by" },

@@ -5,16 +5,12 @@ import moment from "moment";
 
 import axios from "axios";
 import createAuthRefreshInterceptor from "axios-auth-refresh";
+import auth from "./services/auth";
 
 import router from "./router";
 import { store } from "./store/store";
 
 import AppAlert from "./components/core/AppAlert";
-
-//import { getAccessToken, refreshAccessToken } from "./store/utils/utils";
-
-Vue.component("app-alert", AppAlert);
-Vue.config.productionTip = false;
 
 //axios interceptors
 
@@ -25,7 +21,10 @@ const refreshAuthLogic = failedRequest =>
       refresh: localStorage.getItem("refresh")
     })
     .then(tokenRefreshResponse => {
-      localStorage.setItem("token", tokenRefreshResponse.data.access);
+      localStorage.setItem(
+        auth.settings.ACCESS_TOKEN_KEY,
+        tokenRefreshResponse.data.access
+      );
       failedRequest.response.config.headers["Authorization"] =
         "Bearer " + tokenRefreshResponse.data.access;
       return Promise.resolve();
@@ -34,14 +33,15 @@ const refreshAuthLogic = failedRequest =>
 // Instantiate the interceptor (you can chain it as it returns the axios instance)
 createAuthRefreshInterceptor(axios, refreshAuthLogic);
 
-function getAccessToken() {
-  return localStorage.getItem("token");
-}
-
 axios.interceptors.request.use(request => {
-  request.headers["Authorization"] = "Bearer " + getAccessToken();
+  request.headers["Authorization"] = "Bearer " + auth.getAccessToken();
   return request;
 });
+
+//import { getAccessToken, refreshAccessToken } from "./store/utils/utils";
+
+Vue.component("app-alert", AppAlert);
+Vue.config.productionTip = false;
 
 Vue.filter("formatDate", function(value) {
   if (value) {

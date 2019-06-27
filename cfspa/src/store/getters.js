@@ -1,5 +1,3 @@
-import { expiredJwt } from "./utils/utils";
-
 export default {
   menuItems(state, getters) {
     let menuItems = [
@@ -41,10 +39,5 @@ export default {
     return {
       Authorization: "Bearer " + localStorage.getItem("token")
     };
-  },
-
-  tokenIsExpired() {
-    var jwt = localStorage.getItem("token");
-    return expiredJwt(jwt);
   }
 };

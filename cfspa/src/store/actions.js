@@ -1,10 +1,10 @@
 import authService from "../services/auth";
-import {
-  getUser,
-  getAccessToken,
-  removeTokens,
-  setTokens
-} from "./utils/utils";
+// import {
+//   getUser,
+//   getAccessToken,
+//   removeTokens,
+//   setTokens
+// } from "./utils/utils";
 
 export default {
   updateSideNav({ commit }, payload) {
@@ -15,8 +15,8 @@ export default {
     commit("setLoading", true);
     authService.authenticate(payload).then(resp => {
       commit("setLoading", false);
-      setTokens(resp.access, resp.refresh);
-      commit("setUser", getUser(resp.access));
+      authService.setTokens(resp.access, resp.refresh);
+      commit("setUser", authService.getUser(resp.access));
     });
     // .catch(err => {
     //   err = err.response;
@@ -37,14 +37,14 @@ export default {
     // });
   },
   signOutUser({ commit }) {
-    removeTokens();
+    authService.removeTokens();
     commit("setUser", null);
   },
 
   checkAuth({ commit }) {
-    var token = getAccessToken();
+    var token = authService.getAccessToken();
     if (token) {
-      commit("setUser", getUser(token));
+      commit("setUser", authService.getUser(token));
     } else {
       commit("setUser", null);
     }
