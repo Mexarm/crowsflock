@@ -48,7 +48,7 @@ class RateSerializer(CommonFields, serializers.ModelSerializer):
 
 
 class TagSerializer(CommonFields, serializers.ModelSerializer):
-    slug = serializers.HiddenField(default=FromInitialData(
+    slug = serializers.ReadOnlyField(default=FromInitialData(
         lambda initial_data: slugify(initial_data['name'])))
 
     class Meta:
