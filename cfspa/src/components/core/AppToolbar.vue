@@ -28,7 +28,43 @@
     </v-fade-transition>
     <v-spacer></v-spacer>
     <v-toolbar-items class="hidden-xs-only">
-      <v-btn
+      <!-- menu desplegable -->
+      <!-- <div class="text-xs-center"> -->
+      <v-menu
+        offset-y
+        v-if="userIsAuthenticated"
+      >
+        <template v-slot:activator="{ on }">
+          <v-btn
+            flat
+            v-on="on"
+          >
+            <v-icon
+              left
+              dark
+            >home
+            </v-icon>
+            Menu
+          </v-btn>
+        </template>
+        <v-list>
+          <v-list-tile
+            v-for="(item, index) in menuItems"
+            :key="index"
+            :to="item.link"
+          >
+
+            <v-icon left>{{item.icon}}
+
+            </v-icon>
+            <v-list-tile-title>{{ item.title }}</v-list-tile-title>
+          </v-list-tile>
+        </v-list>
+      </v-menu>
+      <!-- </div> -->
+      <!-- menu -->
+
+      <!-- <v-btn
         flat
         v-for="item in menuItems"
         :key="item.title"
@@ -40,7 +76,8 @@
         >{{ item.icon }}
         </v-icon>
         {{ item.title }}
-      </v-btn>
+      </v-btn> -->
+
       <v-btn
         v-if="userIsAuthenticated"
         flat
@@ -51,6 +88,18 @@
           dark
         >exit_to_app</v-icon>
         Logout
+      </v-btn>
+
+      <v-btn
+        v-if="!userIsAuthenticated"
+        flat
+        :to="{ name: 'SignIn'}"
+      >
+        <v-icon
+          left
+          dark
+        >lock_open</v-icon>
+        Login
       </v-btn>
     </v-toolbar-items>
   </v-toolbar>

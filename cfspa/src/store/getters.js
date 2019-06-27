@@ -8,8 +8,14 @@ export default {
     ];
     if (getters.userIsAuthenticated) {
       menuItems = [
-        { icon: "supervisor_account", title: "View Meetups", link: "/meetups" },
-        { icon: "room", title: "Organize Meetup", link: "/meetup/new" },
+        //{ icon: "supervisor_account", title: "View Meetups", link: "/meetups" },
+        //{ icon: "supervisor_account", title: "View Meetups", link: "/meetups" },
+        { icon: "queue", title: "Broadcasts", link: "/broadcasts" },
+        { icon: "subject", title: "Templates", link: "/templates" },
+        { icon: "contacts", title: "Contacts", link: "/contacts" },
+        { icon: "attach_file", title: "Attachments", link: "/attachments" },
+        { icon: "style", title: "Tag", link: "/tags" },
+        { icon: "business", title: "Company", link: "/company" },
         { icon: "person", title: "Profile", link: "/profile" }
       ];
     }

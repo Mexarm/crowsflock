@@ -31,3 +31,12 @@ class IsOwner(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return obj.user.id == request.user.id
+
+
+class IsUser(permissions.BasePermission):
+    """
+    Custom permission allow only if the same user
+    """
+
+    def has_object_permission(self, request, view, obj):
+        return obj.id == request.user.id

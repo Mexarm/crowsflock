@@ -188,8 +188,16 @@ class SimpleAttachment(AuthSignatureMixin):
     @property
     def original_filename(self):
         encoded_filename = self.file.name.split('/')[-1]
+        encoded_filename = encoded_filename + '=' * \
+            (-len(encoded_filename) % 4)  # add padding = if necesary
+        # return encoded_filename
         return base64.urlsafe_b64decode(encoded_filename).decode('utf-8')
 
+    @property
+    def size(self):
+        if self.file:
+            return self.file.size
+        return None
 
 # class AttachmentBuilder(TenantFieldMixin, AuthSignatureMixin):
 #     # takes an open office file, or (inspire wfd :) make data merge and outputs a pdf
@@ -235,6 +243,10 @@ class AdvancedAttachment(AuthSignatureMixin):
     source = models.CharField(max_length=3, null=False,
                               blank=False, choices=SOURCE_CHOICES)
     setup = JSONField(blank=False, null=False)
+
+    # @property
+    # def choices(self):
+    #     return dict(setup_example=self.S3_SAMPLE_CONFIG, source_choices=self.SOURCE_CHOICES)
 
     def __str__(self):
         return f'{self.source} {self.description}'

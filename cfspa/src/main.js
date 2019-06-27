@@ -1,44 +1,52 @@
 import Vue from "vue";
 import "./plugins/vuetify";
 import App from "./App.vue";
+import moment from "moment";
 
 import axios from "axios";
+import createAuthRefreshInterceptor from "axios-auth-refresh";
+
 import router from "./router";
 import { store } from "./store/store";
 
 import AppAlert from "./components/core/AppAlert";
 
-import { getAccessToken, refreshAccessToken } from "./store/utils/utils";
+//import { getAccessToken, refreshAccessToken } from "./store/utils/utils";
 
 Vue.component("app-alert", AppAlert);
 Vue.config.productionTip = false;
 
 //axios interceptors
 
-axios.interceptors.request.use(config => {
-  //console.log('request interceptor:', config)
-  const token = getAccessToken();
-  if (token !== null) {
-    config.headers.Authorization = "Bearer " + token;
-  }
-  return config;
+// Function that will be called to refresh authorization
+const refreshAuthLogic = failedRequest =>
+  axios
+    .post("http://localhost:8000/api/token/refresh/", {
+      refresh: localStorage.getItem("refresh")
+    })
+    .then(tokenRefreshResponse => {
+      localStorage.setItem("token", tokenRefreshResponse.data.access);
+      failedRequest.response.config.headers["Authorization"] =
+        "Bearer " + tokenRefreshResponse.data.access;
+      return Promise.resolve();
+    });
+
+// Instantiate the interceptor (you can chain it as it returns the axios instance)
+createAuthRefreshInterceptor(axios, refreshAuthLogic);
+
+function getAccessToken() {
+  return localStorage.getItem("token");
+}
+
+axios.interceptors.request.use(request => {
+  request.headers["Authorization"] = "Bearer " + getAccessToken();
+  return request;
 });
 
-axios.interceptors.response.use(undefined, function(err) {
-  if (err.status === 401 && err.config && !err.config.__isRetryRequest) {
-    return refreshAccessToken()
-      .then(function(token) {
-        // setTokens(success.access_token, success.refresh_token);
-        err.config.__isRetryRequest = true;
-        err.config.headers.Authorization = "Bearer " + token;
-        return axios(err.config);
-      })
-      .catch(function(error) {
-        // console.log("Refresh login error: ", error);
-        throw error;
-      });
+Vue.filter("formatDate", function(value) {
+  if (value) {
+    return moment(String(value)).format("MM/DD/YYYY hh:mm");
   }
-  throw err;
 });
 
 new Vue({

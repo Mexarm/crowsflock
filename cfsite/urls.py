@@ -24,7 +24,7 @@ from rest_framework.authtoken.views import obtain_auth_token
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('token/', obtain_auth_token, name='api_token_auth'),  # tokenauth
-    path('api-auth/', include('rest_framework.urls')),
+    path('api/auth/', include('rest_framework.urls')),
     path('api/token/', jwt_views.TokenObtainPairView.as_view(),
          name='token_obtain_pair'),
     path('api/token/refresh/', jwt_views.TokenRefreshView.as_view(),
