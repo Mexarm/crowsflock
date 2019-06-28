@@ -1,25 +1,30 @@
 <template>
   <v-container>
-    <v-flex>
-      <v-card>
-        <v-card-title class="justify-center">
-          <div>
-            <h3 class="headline mb-0">Tags</h3>
-          </div>
-          <!-- <v-card-text>
-            <p class="text-xs-center">Center align on all viewport sizes</p>
-          </v-card-text> -->
-        </v-card-title>
-      </v-card>
-    </v-flex>
 
     <v-layout
       text-xs-center
       wrap
     >
+
+      <v-flex>
+        <v-card>
+          <v-card-title class="justify-center">
+            <div>
+              <h3 class="headline mb-0">Tags</h3>
+            </div>
+            <!-- <v-card-text>
+            <p class="text-xs-center">Center align on all viewport sizes</p>
+          </v-card-text> -->
+          </v-card-title>
+        </v-card>
+      </v-flex>
+
       <v-data-table
         :headers="headers"
         :items="tags"
+        :pagination.sync="pagination"
+        :total-items="totalTags"
+        :loading="loading"
         class="elevation-1"
       >
         <template v-slot:items="props">
@@ -33,9 +38,15 @@
           <td class="text-xs-right">{{ props.item.modified_on | formatDate}}</td>
         </template>
       </v-data-table>
+
+      <div class="text-xs-center pt-2">
+        {{ pagination }}<br />
+        {{ tags}}
+      </div>
+
     </v-layout>
     <v-layout>
-      <v-btn @click="retrieveData"></v-btn>
+      <v-btn @click="getDataFromApi"></v-btn>
 
     </v-layout>
   </v-container>
@@ -47,29 +58,54 @@ import axios from "axios";
 export default {
   data() {
     return {
-      headers: [
-        // { text: "id", value: "id" },
-        // { text: "name", align: "left", sortable: false, value: "name" },
-        // { text: "created by", value: "created_by" },
-        // { text: "creted on ", value: "created_on" },
-        // { text: "modified by", value: "modified_by" },
-        // { text: "modified on ", value: "modified_on" }
-      ],
-      tags: []
+      // search: "",
+      // pagination: {},
+      pagination: {},
+      headers: [],
+      tags: [],
+      totalTags: 0,
+      loading: true
     };
   },
   methods: {
-    retrieveData() {
-      axios.get("http://127.0.0.1:8000/api/tag/").then(resp => {
-        this.tags = resp.data.results;
+    getDataFromApi() {
+      let pagetext = "";
+      if (this.pagination) {
+        if (this.pagination.page > 1) {
+          pagetext = "?page=" + this.pagination.page;
+        }
+      }
+      let url = "http://127.0.0.1:8000/api/tag/" + pagetext;
+      this.loading = true;
+      return axios.get(url).then(resp => {
+        this.loading = false;
+
+        return resp.data;
+      });
+    },
+    getFieldsFromApi() {
+      this.loading = true;
+      return axios.options("http://127.0.0.1:8000/api/tag/").then(resp => {
+        this.loading = false;
+        return resp.data;
       });
     }
   },
+  watch: {
+    pagination: {
+      handler() {
+        this.getDataFromApi().then(data => {
+          this.tags = data.results;
+          this.totalTags = data.count;
+        });
+      },
+      deep: true
+    }
+  },
 
-  created() {
-    axios
-      .options("http://127.0.0.1:8000/api/tag/")
-      .then(resp => resp.data.actions)
+  mounted() {
+    this.getFieldsFromApi()
+      .then(data => data.actions)
       .then(actions => actions.POST)
       .then(fields => {
         let headers = [];
@@ -84,11 +120,10 @@ export default {
       })
       .then(headers => {
         this.headers = headers;
-        this.headers[1].sortable = false;
       });
-
-    axios.get("http://127.0.0.1:8000/api/tag/").then(resp => {
-      this.tags = resp.data.results;
+    this.getDataFromApi().then(data => {
+      this.tags = data.results;
+      this.totalTags = data.count;
     });
   }
 };
