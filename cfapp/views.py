@@ -6,6 +6,9 @@ from rest_framework import decorators
 from rest_framework import response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter, SearchFilter
 #from rest_framework.decorators import action
 #from rest_framework.response import Response
 from cfapp.models import (
@@ -22,6 +25,10 @@ from cfapp.models import (
     Secret,
     EmailTemplate,
     SMSTemplate,
+)
+
+from cfapp.filters import (
+    TagFilter
 )
 
 from cfapp import serializers
@@ -73,6 +80,11 @@ class TagViewSet(mixins.CreateModelMixin,
                  viewsets.GenericViewSet):
     serializer_class = serializers.TagSerializer
     permission_classes = (ExtendedDjangoModelPermissions,)
+    filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
+    filterset_class = TagFilter
+    ordering_fields = ('name', 'created_by', 'created_on')
+    ordering = ('-created_on',)
+    search_fields = ('name',)
 
     def get_queryset(self):
         return Tag.objects.all()

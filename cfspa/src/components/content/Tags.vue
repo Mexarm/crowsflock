@@ -5,50 +5,55 @@
       text-xs-center
       wrap
     >
+      <v-card>
+        <v-card-title>
+          <h3 class="headline mb-0"> Tags</h3>
+          <v-spacer></v-spacer>
+          <v-text-field
+            v-model="search"
+            append-icon="search"
+            label="Search"
+            single-line
+            hide-details
+          ></v-text-field>
+        </v-card-title>
 
-      <v-flex>
-        <v-card>
-          <v-card-title class="justify-center">
-            <div>
-              <h3 class="headline mb-0">Tags</h3>
-            </div>
-            <!-- <v-card-text>
-            <p class="text-xs-center">Center align on all viewport sizes</p>
-          </v-card-text> -->
-          </v-card-title>
-        </v-card>
-      </v-flex>
+        <v-data-table
+          :headers="headers"
+          :items="tags"
+          :pagination.sync="pagination"
+          :total-items="totalTags"
+          :loading="loading"
+          class="elevation-1"
+        >
+          <template v-slot:items="props">
 
-      <v-data-table
-        :headers="headers"
-        :items="tags"
-        :pagination.sync="pagination"
-        :total-items="totalTags"
-        :loading="loading"
-        class="elevation-1"
-      >
-        <template v-slot:items="props">
-
-          <td>{{ props.item.id }}</td>
-          <td class="text-xs-left">{{ props.item.name }}</td>
-          <td class="text-xs-left">{{ props.item.slug }}</td>
-          <td class="text-xs-right">{{ props.item.created_by }}</td>
-          <td class="text-xs-right">{{ props.item.created_on | formatDate}}</td>
-          <td class="text-xs-right">{{ props.item.modified_by }}</td>
-          <td class="text-xs-right">{{ props.item.modified_on | formatDate}}</td>
-        </template>
-      </v-data-table>
-
+            <td>{{ props.item.id }}</td>
+            <td class="text-xs-left">{{ props.item.name }}</td>
+            <td class="text-xs-left">{{ props.item.slug }}</td>
+            <td class="text-xs-right">{{ props.item.created_by ? props.item.created_by.username: '' }}</td>
+            <td class="text-xs-right">{{ props.item.created_on | formatDate}}</td>
+            <td class="text-xs-right">{{ props.item.modified_by ? props.item.modified_by.username:'' }}</td>
+            <td class="text-xs-right">{{ props.item.modified_on | formatDate}}</td>
+          </template>
+          <template v-slot:no-results>
+            <v-alert
+              :value="true"
+              color="error"
+              icon="warning"
+            >
+              Your search for "{{ search }}" found no results.
+            </v-alert>
+          </template>
+        </v-data-table>
+      </v-card>
       <div class="text-xs-center pt-2">
         {{ pagination }}<br />
-        {{ tags}}
+
       </div>
 
     </v-layout>
-    <v-layout>
-      <v-btn @click="getDataFromApi"></v-btn>
 
-    </v-layout>
   </v-container>
 </template>
 
@@ -60,6 +65,7 @@ export default {
     return {
       // search: "",
       // pagination: {},
+      search: "",
       pagination: {},
       headers: [],
       tags: [],
@@ -69,17 +75,50 @@ export default {
   },
   methods: {
     getDataFromApi() {
-      let pagetext = "";
-      if (this.pagination) {
-        if (this.pagination.page > 1) {
-          pagetext = "?page=" + this.pagination.page;
-        }
-      }
-      let url = "http://127.0.0.1:8000/api/tag/" + pagetext;
-      this.loading = true;
-      return axios.get(url).then(resp => {
-        this.loading = false;
+      const page =
+        typeof this.pagination === "object" &&
+        typeof this.pagination.page === "number" &&
+        this.pagination.page > 1
+          ? this.pagination.page
+          : false;
+      const ordering =
+        typeof this.pagination === "object" &&
+        typeof this.pagination.sortBy === "string" &&
+        this.pagination.sortBy.length > 0
+          ? this.pagination.sortBy
+          : false;
+      const descending =
+        typeof this.pagination === "object" &&
+        typeof this.pagination.descending === "boolean" &&
+        this.pagination.descending
+          ? "-"
+          : "";
 
+      const search =
+        typeof this.search === "string" && this.search.length > 0
+          ? this.search
+          : false;
+
+      const params = {};
+
+      if (page) {
+        params.page = page;
+      }
+
+      if (ordering) {
+        params.ordering = descending + ordering;
+      }
+
+      if (search) {
+        params.search = search;
+      }
+
+      //eslint-disable-next-line
+      console.log(params);
+      let url = "http://127.0.0.1:8000/api/tag/";
+      this.loading = true;
+      return axios.get(url, { params }).then(resp => {
+        this.loading = false;
         return resp.data;
       });
     },
@@ -100,6 +139,14 @@ export default {
         });
       },
       deep: true
+    },
+    search: {
+      handler() {
+        this.getDataFromApi().then(data => {
+          this.tags = data.results;
+          this.totalTags = data.count;
+        });
+      }
     }
   },
 

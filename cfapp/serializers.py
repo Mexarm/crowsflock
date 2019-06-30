@@ -20,6 +20,15 @@ from cfapp.utils.serializers import CommonFields, FromInitialData
 
 
 # Serializers
+class UserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = get_user_model()
+        fields = ('id', 'username', 'first_name',
+                  'last_name', 'email', 'date_joined')
+        read_only_fields = ('id', 'username', 'date_joined')
+
+
 class CompanySerializer(CommonFields, serializers.ModelSerializer):
     class Meta:
         model = Company
@@ -50,6 +59,8 @@ class RateSerializer(CommonFields, serializers.ModelSerializer):
 class TagSerializer(CommonFields, serializers.ModelSerializer):
     slug = serializers.ReadOnlyField(default=FromInitialData(
         lambda initial_data: slugify(initial_data['name'])))
+    created_by = UserSerializer()
+    modified_by = UserSerializer()
 
     class Meta:
         model = Tag
@@ -128,12 +139,3 @@ class SMSTemplateSerializer(CommonFields, serializers.ModelSerializer):
     class Meta:
         model = SMSTemplate
         fields = '__all__'
-
-
-class UserSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = get_user_model()
-        fields = ('id', 'username', 'first_name',
-                  'last_name', 'email', 'date_joined')
-        read_only_fields = ('id', 'username', 'date_joined')
