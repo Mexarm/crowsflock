@@ -10,11 +10,11 @@
           <h3 class="headline mb-0"> Tags</h3>
           <v-spacer></v-spacer>
           <v-text-field
-            v-model="search"
             append-icon="search"
             label="Search"
             single-line
             hide-details
+            @input="update"
           ></v-text-field>
         </v-card-title>
 
@@ -59,6 +59,7 @@
 
 <script>
 import axios from "axios";
+import _ from "lodash";
 
 export default {
   data() {
@@ -99,6 +100,12 @@ export default {
           ? this.search
           : false;
 
+      const rowsPerPage =
+        typeof this.pagination === "object" &&
+        typeof this.pagination.rowsPerPage === "number" &&
+        this.pagination.rowsPerPage > 0
+          ? this.pagination.rowsPerPage
+          : false;
       const params = {};
 
       if (page) {
@@ -112,9 +119,10 @@ export default {
       if (search) {
         params.search = search;
       }
+      if (rowsPerPage) {
+        params.page_size = rowsPerPage;
+      }
 
-      //eslint-disable-next-line
-      console.log(params);
       let url = "http://127.0.0.1:8000/api/tag/";
       this.loading = true;
       return axios.get(url, { params }).then(resp => {
@@ -128,7 +136,10 @@ export default {
         this.loading = false;
         return resp.data;
       });
-    }
+    },
+    update: _.debounce(function(value) {
+      this.search = value;
+    }, 300)
   },
   watch: {
     pagination: {
@@ -137,8 +148,8 @@ export default {
           this.tags = data.results;
           this.totalTags = data.count;
         });
-      },
-      deep: true
+      }
+      //deep: true
     },
     search: {
       handler() {

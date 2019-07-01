@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
+from cfapp.pagination import StandardResultsSetPagination
 #from rest_framework.decorators import action
 #from rest_framework.response import Response
 from cfapp.models import (
@@ -85,6 +86,7 @@ class TagViewSet(mixins.CreateModelMixin,
     ordering_fields = ('name', 'created_by', 'created_on')
     ordering = ('-created_on',)
     search_fields = ('name',)
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         return Tag.objects.all()
