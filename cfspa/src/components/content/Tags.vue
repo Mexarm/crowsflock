@@ -60,6 +60,8 @@
 <script>
 import axios from "axios";
 import _ from "lodash";
+import auth from "../../services/auth";
+const url = auth.settings.baseUrl + "api/tag/";
 
 export default {
   data() {
@@ -123,7 +125,7 @@ export default {
         params.page_size = rowsPerPage;
       }
 
-      let url = "http://127.0.0.1:8000/api/tag/";
+      //let url = settings.baseUrl + "api/tag/";
       this.loading = true;
       return axios.get(url, { params }).then(resp => {
         this.loading = false;
@@ -132,7 +134,8 @@ export default {
     },
     getFieldsFromApi() {
       this.loading = true;
-      return axios.options("http://127.0.0.1:8000/api/tag/").then(resp => {
+      //let url = settings.baseUrl + "api/tag/";
+      return axios.options(url).then(resp => {
         this.loading = false;
         return resp.data;
       });

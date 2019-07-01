@@ -5,7 +5,7 @@ const settings = {};
 
 settings.ACCESS_TOKEN_KEY = "token";
 settings.REFRESH_TOKEN_KEY = "refresh";
-
+settings.baseUrl = "http://127.0.0.1:8000/";
 function authenticate(request) {
   return (
     axios
