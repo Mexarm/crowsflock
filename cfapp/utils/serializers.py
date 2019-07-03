@@ -1,5 +1,13 @@
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
 
+class UserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = get_user_model()
+        fields = ('id', 'username', 'first_name',
+                  'last_name', 'email', 'date_joined')
+        read_only_fields = ('id', 'username', 'date_joined')
 
 class FromContext(object):
     def __init__(self, value_fn):
@@ -57,12 +65,14 @@ class UpdateOnlyDefault(serializers.CreateOnlyDefault):
 class CommonFields(serializers.Serializer):
     # tenant = serializers.HiddenField(default=FromContext(
     #     lambda context: context.get('request').user.profile.tenant))
-    created_by = MyPrimaryKeyRelatedField(required=False,
-                                          default=serializers.CreateOnlyDefault(
-                                              serializers.CurrentUserDefault()))
-    modified_by = MyPrimaryKeyRelatedField(required=False,
-                                           default=UpdateOnlyDefault(
-                                               serializers.CurrentUserDefault()))
+    # created_by = MyPrimaryKeyRelatedField(required=False,
+    #                                       default=serializers.CreateOnlyDefault(
+    #                                           serializers.CurrentUserDefault()))
+    # modified_by = MyPrimaryKeyRelatedField(required=False,
+    #                                        default=UpdateOnlyDefault(
+    #                                            serializers.CurrentUserDefault()))
+    created_by = UserSerializer(required=False, default=serializers.CreateOnlyDefault(serializers.CurrentUserDefault()))
+    modified_by = UserSerializer(required=False, default=UpdateOnlyDefault(serializers.CurrentUserDefault()))
     common_fields = ('created_by',
                      'created_on', 'modified_by', 'modified_on'
                      #  , 'tenant'

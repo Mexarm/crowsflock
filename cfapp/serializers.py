@@ -1,5 +1,5 @@
 from django.utils.text import slugify
-from django.contrib.auth import get_user_model
+
 from rest_framework import serializers
 from cfapp.models import (
     Company,
@@ -16,17 +16,10 @@ from cfapp.models import (
     EmailTemplate,
     SMSTemplate,
 )
-from cfapp.utils.serializers import CommonFields, FromInitialData
+from cfapp.utils.serializers import CommonFields, FromInitialData, UserSerializer
 
 
 # Serializers
-class UserSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = get_user_model()
-        fields = ('id', 'username', 'first_name',
-                  'last_name', 'email', 'date_joined')
-        read_only_fields = ('id', 'username', 'date_joined')
 
 
 class CompanySerializer(CommonFields, serializers.ModelSerializer):
@@ -59,8 +52,6 @@ class RateSerializer(CommonFields, serializers.ModelSerializer):
 class TagSerializer(CommonFields, serializers.ModelSerializer):
     slug = serializers.ReadOnlyField(default=FromInitialData(
         lambda initial_data: slugify(initial_data['name'])))
-    created_by = UserSerializer()
-    modified_by = UserSerializer()
 
     class Meta:
         model = Tag
