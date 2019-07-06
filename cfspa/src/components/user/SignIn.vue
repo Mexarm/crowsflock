@@ -2,7 +2,7 @@
   <v-container>
     <v-layout
       row
-      v-if="error"
+      v-if="alert"
     >
       <v-flex
         xs12
@@ -11,7 +11,8 @@
       >
         <app-alert
           @dismissed="onDismissed"
-          :text="error.message"
+          :text="alert.message"
+          :type="alert.type"
         ></app-alert>
       </v-flex>
     </v-layout>
@@ -96,8 +97,8 @@ export default {
     user() {
       return this.$store.getters.user;
     },
-    error() {
-      return this.$store.getters.error;
+    alert() {
+      return this.$store.getters.alert;
     },
     loading() {
       return this.$store.getters.loading;
@@ -118,7 +119,7 @@ export default {
       });
     },
     onDismissed() {
-      this.$store.dispatch("clearError");
+      this.$store.dispatch("clearAlert");
     }
   }
 };

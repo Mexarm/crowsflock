@@ -5,8 +5,8 @@ export default {
   setLoading(state, payload) {
     state.loading = payload
   },
-  setError(state, payload) {
-    state.error = payload
+  setAlert(state, payload) {
+    state.alert = payload
   },
   setSideNav(state, payload) {
     state.sideNav = payload

@@ -2,5 +2,5 @@ export default {
   user: null,
   sideNav: false,
   loading: false,
-  error: null
+  alert: null,
 }

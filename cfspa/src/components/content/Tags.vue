@@ -1,24 +1,12 @@
 <template>
   <v-container>
-
     <v-layout
       text-xs-center
       wrap
     >
-
-
- 
-
-
-
-
-
-
-
-
       <v-card>
         <v-card-title>
-          <h3 class="headline mb-0"> Tags</h3>
+          <h3 class="headline mb-0">Tags</h3>
           <v-spacer></v-spacer>
           <v-text-field
             append-icon="search"
@@ -28,64 +16,26 @@
             @input="update"
           ></v-text-field>
 
-
-
-
-
-
-<!-- <v-toolbar flat color="white"> -->
-      <!-- <v-toolbar-title>Tags</v-toolbar-title> -->
-      <!-- <v-divider
-        class="mx-2"
-        inset
-        vertical
-      ></v-divider> -->
-      <v-spacer></v-spacer>
-      <v-dialog v-model="dialog" max-width="500px">
-        <template v-slot:activator="{ on }">
-          <v-btn color="primary" dark class="mb-2" v-on="on">New Item</v-btn>
-        </template>
-        <v-card>
-          <v-card-title>
-            <span class="headline">{{ formTitle }}</span>
-          </v-card-title>
-
-          <v-card-text>
-            <v-container grid-list-md>
-              <v-layout wrap>
-                <v-flex xs12 sm6 md4>
-                  <v-text-field v-model="editedItem.name" label="name"></v-text-field>
-                </v-flex>
-              </v-layout>
-            </v-container>
-          </v-card-text>
-
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue darken-1" flat @click="close">Cancel</v-btn>
-            <v-btn color="blue darken-1" flat @click="save">Save</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-    <!-- </v-toolbar> -->
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+          <v-spacer></v-spacer>
+          <app-tag-dialog @savedObject="save"></app-tag-dialog>
         </v-card-title>
+
+        <v-layout
+          row
+          v-if="event"
+        >
+          <v-flex
+            xs12
+            sm6
+            offset-sm3
+          >
+            <app-alert
+              @dismissed="onDismissed"
+              :text="event.message"
+              :type="event.type"
+            ></app-alert>
+          </v-flex>
+        </v-layout>
 
         <v-data-table
           :headers="headers"
@@ -96,7 +46,6 @@
           class="elevation-1"
         >
           <template v-slot:items="props">
-
             <td>{{ props.item.id }}</td>
             <td class="text-xs-left">{{ props.item.name }}</td>
             <td class="text-xs-left">{{ props.item.slug }}</td>
@@ -110,19 +59,11 @@
               :value="true"
               color="error"
               icon="warning"
-            >
-              Your search for "{{ search }}" found no results.
-            </v-alert>
+            >Your search for "{{ search }}" found no results.</v-alert>
           </template>
         </v-data-table>
       </v-card>
-      <div class="text-xs-center pt-2">
-        {{ pagination }}<br />
-
-      </div>
-
     </v-layout>
-
   </v-container>
 </template>
 
@@ -130,49 +71,47 @@
 import axios from "axios";
 import _ from "lodash";
 import auth from "../../services/auth";
+import AppTagDialog from "./TagDialog"
 const url = auth.settings.baseUrl + "api/tag/";
 
 export default {
-  data() {
+  components: {
+    AppTagDialog,
+  },
+  data () {
     return {
-      // search: "",
-      // pagination: {},
+      event: null,
       dialog: false,
       search: "",
       pagination: {},
       headers: [],
       tags: [],
       totalTags: 0,
-      editedIndex: -1,
-      editedItem: {
-        name: ''
-      },
+    //   editedIndex: -1,
+    //   editedItem: {
+        // name: ""
+    //   },
       loading: true
     };
   },
-  computed: {
-      formTitle () {
-        return this.editedIndex === -1 ? 'New Item' : 'Edit Item'
-      }
-  },
   methods: {
-    getDataFromApi() {
+    getDataFromApi () {
       const page =
         typeof this.pagination === "object" &&
-        typeof this.pagination.page === "number" &&
-        this.pagination.page > 1
+          typeof this.pagination.page === "number" &&
+          this.pagination.page > 1
           ? this.pagination.page
           : false;
       const ordering =
         typeof this.pagination === "object" &&
-        typeof this.pagination.sortBy === "string" &&
-        this.pagination.sortBy.length > 0
+          typeof this.pagination.sortBy === "string" &&
+          this.pagination.sortBy.length > 0
           ? this.pagination.sortBy
           : false;
       const descending =
         typeof this.pagination === "object" &&
-        typeof this.pagination.descending === "boolean" &&
-        this.pagination.descending
+          typeof this.pagination.descending === "boolean" &&
+          this.pagination.descending
           ? "-"
           : "";
 
@@ -183,8 +122,8 @@ export default {
 
       const rowsPerPage =
         typeof this.pagination === "object" &&
-        typeof this.pagination.rowsPerPage === "number" &&
-        this.pagination.rowsPerPage > 0
+          typeof this.pagination.rowsPerPage === "number" &&
+          this.pagination.rowsPerPage > 0
           ? this.pagination.rowsPerPage
           : false;
       const params = {};
@@ -204,28 +143,60 @@ export default {
         params.page_size = rowsPerPage;
       }
 
-      //let url = settings.baseUrl + "api/tag/";
       this.loading = true;
       return axios.get(url, { params }).then(resp => {
         this.loading = false;
         return resp.data;
       });
     },
-    getFieldsFromApi() {
+    getFieldsFromApi () {
       this.loading = true;
-      //let url = settings.baseUrl + "api/tag/";
       return axios.options(url).then(resp => {
         this.loading = false;
         return resp.data;
       });
     },
-    update: _.debounce(function(value) {
+    saveToAPi (data) {
+      return axios
+        .post(url, data)
+        .then(response => {
+          if (response.status === 201) {
+            this.event = {
+              message: response.data.name + ', ' + response.statusText,
+              type: "success"
+            };
+            return response;
+          }
+        })
+        .catch(error => {
+          this.event = {
+            message: error,
+            type: "error"
+          };
+        });
+    },
+    update: _.debounce(function (value) {
       this.search = value;
-    }, 300)
+    }, 300),
+    save (obj) {
+      this.saveToAPi(obj).then(() => {
+        this.close();
+        this.getDataFromApi().then(data => {
+          this.tags = data.results;
+          this.totalTags = data.count;
+        });
+      });
+    },
+    close () {
+      this.dialog = false;
+    },
+    onDismissed () {
+      this.event = {}
+    }
   },
   watch: {
     pagination: {
-      handler() {
+      handler () {
         this.getDataFromApi().then(data => {
           this.tags = data.results;
           this.totalTags = data.count;
@@ -234,7 +205,7 @@ export default {
       //deep: true
     },
     search: {
-      handler() {
+      handler () {
         this.getDataFromApi().then(data => {
           this.tags = data.results;
           this.totalTags = data.count;
@@ -242,11 +213,11 @@ export default {
       }
     },
     dialog (val) {
-        val || this.close()
-      }
+      val || this.close();
+    }
   },
 
-  mounted() {
+  mounted () {
     this.getFieldsFromApi()
       .then(data => data.actions)
       .then(actions => actions.POST)

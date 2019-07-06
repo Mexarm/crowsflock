@@ -6,9 +6,12 @@ const settings = {};
 settings.ACCESS_TOKEN_KEY = "token";
 settings.REFRESH_TOKEN_KEY = "refresh";
 settings.baseUrl = "http://127.0.0.1:8000/";
+
+let axiosInstance = axios.create();
+
 function authenticate(request) {
   return (
-    axios
+    axiosInstance
       .post("http://localhost:8000/api/token/", request)
       // return Vue.http.post('https://crossorigin.me/http://postb.in/VWOhALuu', request)
       .then(response => Promise.resolve(response.data))

@@ -31,8 +31,8 @@ export default {
   loading(state) {
     return state.loading;
   },
-  error(state) {
-    return state.error;
+  alert(state) {
+    return state.alert;
   },
 
   getAuthHeader() {
