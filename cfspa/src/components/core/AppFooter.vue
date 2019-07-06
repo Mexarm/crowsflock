@@ -5,9 +5,13 @@
       fill-height
       py-0
     >
-      <v-layout align-center justify-end>
+
+      <v-layout
+        align-center
+        justify-end
+      >
         <v-flex shrink>
-          &copy; {{ (new Date()).getFullYear() }} — vapp
+          &copy; {{ (new Date()).getFullYear() }} — HerzuDigital
         </v-flex>
       </v-layout>
     </v-container>
@@ -15,8 +19,8 @@
 </template>
 
 <style scoped>
-  a {
-	color: rgba(0,0,0,0.54);
+a {
+	color: rgba(0, 0, 0, 0.54);
 	text-decoration: none;
 }
 

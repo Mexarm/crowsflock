@@ -4,18 +4,21 @@ import axios from 'axios';
 const baseUrl = auth.settings.baseUrl + 'api/tag/';
 
 export default {
+	namespaced: true,
 	state: {
-		tags: {},
-		headers : [],
-		totalTags: 0,
-		fields: {}
+		tags: [],
+		headers: [],
+		totalTags: 0
 	},
 	getters: {
 		tags(state) {
 			return state.tags;
 		},
-		fields(state) {
-			return state.fields;
+		headers(state) {
+			return state.headers;
+		},
+		totalTags(state) {
+			return state.totalTags;
 		}
 	},
 	mutations: {
@@ -24,10 +27,16 @@ export default {
 		},
 		setFields(state, payload) {
 			state.fields = payload;
+		},
+		setHeaders(state, payload) {
+			state.headers = payload;
+		},
+		setTotalTags(state, payload) {
+			state.totalTags = payload;
 		}
 	},
 	actions: {
-		getfromApi({ commit }, { pagination, searchTxt }) {
+		getTags({ commit }, { pagination, searchTxt }) {
 			const page =
 				typeof pagination === 'object' &&
 				typeof pagination.page === 'number' &&
@@ -76,15 +85,65 @@ export default {
 				params.page_size = rowsPerPage;
 			}
 
-			commit('setLoading', true, { root: true});
-			return axios.get(baseUrl, { params }).then(resp => {
-				commit('setLoading', false, { root: true});
-				commit('setTags', resp.data);
-			})
-			.catch(error => {
-				commit('setLoading', false);
-				commit('setAlert', { message: error.message, type: 'error'});
-			})
+			commit('setLoading', true, { root: true });
+			axios
+				.get(baseUrl, { params })
+				.then(resp => resp.data)
+				.then(data => {
+					commit('setLoading', false, { root: true });
+					commit('setTags', data.results);
+					commit('setTotalTags', data.count);
+				});
+			// .catch(error => {
+			// 	commit('setLoading', false);
+			// 	commit('setAlert', {
+			// 		message: error.message,
+			// 		type: 'error'
+			// 	});
+			// });
+		},
+		getHeaders({ commit }) {
+			commit('setLoading', true, { root: true });
+			axios
+				.options(baseUrl)
+				.then(resp => resp.data)
+				.then(data => data.actions)
+				.then(actions => actions.POST)
+				.then(fields => {
+					commit('setLoading', true, { root: true });
+					let headers = [];
+					const fields_list = Object.keys(fields);
+					for (const field of fields_list) {
+						headers.push({
+							text: fields[field].label,
+							value: field
+						});
+					}
+					return headers;
+				})
+				.then(headers => {
+					commit('setHeaders', headers);
+				});
+		},
+		save({ commit }, payload) {
+			return axios
+				.post(baseUrl, payload)
+				.then(response => {
+					if (response.status === 201) {
+						commit('setAlert', {
+							message:
+								response.data.name + ', ' + response.statusText,
+							type: 'success'
+						},  { root: true });
+						return response;
+					}
+				})
+				.catch(error => {
+					commit('setAlert', {
+						message: error,
+						type: 'error'
+					}, { root: true });
+				});
 		}
 	}
 };

@@ -50,7 +50,7 @@ export default {
     }
   },
 
-  clearError({ commit }) {
+  clearAlert({ commit }) {
     commit("setAlert", null);
   }
 };
