@@ -98,7 +98,7 @@ ipython_config.py
 
 # pyenv
 .python-version
-crowsflock/pyvenv.*
+pyvenv.cfg
 Scripts/
 
 # pipenv
