@@ -12,6 +12,8 @@ import { store } from "./store/store";
 
 import AppAlert from "./components/core/AppAlert";
 
+import Vuelidate from "vuelidate";
+
 //axios interceptors
 
 // Function that will be called to refresh authorization
@@ -48,6 +50,8 @@ Vue.filter("formatDate", function(value) {
     return moment(String(value)).format("MM/DD/YYYY hh:mm");
   }
 });
+
+Vue.use(Vuelidate);
 
 new Vue({
   render: h => h(App),

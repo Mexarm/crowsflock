@@ -100,7 +100,7 @@ export default {
 
     update: _.debounce(function (value) {
       this.search = value;
-    }, 300),
+    }, 500),
     save (obj) {
       this.$store.dispatch('tag/save', obj).then(() => {
         this.$store.dispatch('tag/getTags', { pagination: this.pagination, searchTxt: this.search })
