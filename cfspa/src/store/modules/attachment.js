@@ -1,7 +1,7 @@
 import auth from "../../services/auth";
 import axios from "axios";
 
-const baseUrl = auth.settings.baseUrl + "api/tag/";
+const baseUrl = auth.settings.baseUrl + "api/attachment/";
 
 export default {
   namespaced: true,
@@ -17,7 +17,7 @@ export default {
     headers(state) {
       return state.headers;
     },
-    totalItems(state) {
+    totalTags(state) {
       return state.totalItems;
     }
   },
@@ -130,7 +130,8 @@ export default {
             commit(
               "setAlert",
               {
-                message: response.data.name + ", " + response.statusText,
+                message:
+                  response.data.original_filename + ", " + response.statusText,
                 type: "success"
               },
               { root: true }

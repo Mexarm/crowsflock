@@ -3,7 +3,7 @@
     <v-layout text-xs-center wrap>
       <v-card>
         <v-card-title>
-          <h3 class="headline mb-0">Tags</h3>
+          <h3 class="headline mb-0">Attachments</h3>
           <v-spacer></v-spacer>
           <v-text-field
             append-icon="search"
@@ -29,16 +29,17 @@
 
         <v-data-table
           :headers="headers"
-          :items="tags"
+          :items="items"
           :pagination.sync="pagination"
-          :total-items="totalTags"
+          :total-items="totalItems"
           :loading="loading"
           class="elevation-1"
         >
           <template v-slot:items="props">
             <td>{{ props.item.id }}</td>
-            <td class="text-xs-left">{{ props.item.name }}</td>
-            <td class="text-xs-left">{{ props.item.slug }}</td>
+            <td class="text-xs-left">{{ props.item.original_filename }}</td>
+            <td class="text-xs-left">{{ props.item.size | formatFileSize }}</td>
+            <td class="text-xs-left">{{ props.item.rename }}</td>
             <td class="text-xs-right">
               {{ props.item.created_by ? props.item.created_by.username : "" }}
             </td>
@@ -73,9 +74,9 @@ import AppTagDialog from "./TagDialog";
 export default {
   computed: {
     ...mapGetters({
-      tags: "tag/items",
-      headers: "tag/headers",
-      totalTags: "tag/totalItems",
+      items: "attachment/items",
+      headers: "attachment/headers",
+      totalItems: "attachment/totalItems",
       loading: "loading",
       alert: "alert"
     })
@@ -100,7 +101,7 @@ export default {
     }, 500),
     save(obj) {
       this.$store.dispatch("tag/save", obj).then(() => {
-        this.$store.dispatch("tag/getItems", {
+        this.$store.dispatch("tag/getTags", {
           pagination: this.pagination,
           searchTxt: this.search
         });
@@ -117,7 +118,7 @@ export default {
   watch: {
     pagination: {
       handler() {
-        this.$store.dispatch("tag/getItems", {
+        this.$store.dispatch("attachment/getItems", {
           pagination: this.pagination,
           searchTxt: this.search
         });
@@ -126,7 +127,7 @@ export default {
     },
     search: {
       handler() {
-        this.$store.dispatch("tag/getItems", {
+        this.$store.dispatch("attachment/getItems", {
           pagination: this.pagination,
           searchTxt: this.search
         });
@@ -138,11 +139,11 @@ export default {
   },
 
   mounted() {
-    this.$store.dispatch("tag/getItems", {
+    this.$store.dispatch("attachment/getItems", {
       pagination: this.pagination,
       searchTxt: this.search
     });
-    this.$store.dispatch("tag/getHeaders");
+    this.$store.dispatch("attachment/getHeaders");
   }
 };
 </script>

@@ -5,7 +5,7 @@ import authService from "../services/auth";
 //   removeTokens,
 //   setTokens
 // } from "./utils/utils";
-
+import router from "../router"
 export default {
   updateSideNav({ commit }, payload) {
     commit("setSideNav", payload);
@@ -36,9 +36,18 @@ export default {
       commit("setAlert", { message, type: 'error' });
     });
   },
+  tryAutoLogin({commit}){
+	let token = localStorage.getItem(authService.settings.ACCESS_TOKEN_KEY)
+	let refresh = localStorage.getItem(authService.settings.REFRESH_TOKEN_KEY)
+	// @TODO: verify if refresh is not expired
+	if (token && refresh) {
+		commit('setUser', authService.getUser(token))
+	}
+  },
   signOutUser({ commit }) {
     authService.removeTokens();
-    commit("setUser", null);
+	commit("setUser", null);
+	router.replace('/signin')
   },
 
   checkAuth({ commit }) {

@@ -2,6 +2,7 @@ import Vue from "vue";
 import "./plugins/vuetify";
 import App from "./App.vue";
 import moment from "moment";
+import filesize from "filesize";
 
 import axios from "axios";
 import createAuthRefreshInterceptor from "axios-auth-refresh";
@@ -50,11 +51,19 @@ Vue.filter("formatDate", function(value) {
     return moment(String(value)).format("MM/DD/YYYY hh:mm");
   }
 });
+Vue.filter("formatFileSize", function(value) {
+  if (value) {
+    return filesize(value);
+  }
+});
 
 Vue.use(Vuelidate);
 
 new Vue({
   render: h => h(App),
   store,
-  router
+  router,
+  created() {
+    this.$store.dispatch("tryAutoLogin");
+  }
 }).$mount("#app");

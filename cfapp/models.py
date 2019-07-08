@@ -185,9 +185,13 @@ class SimpleAttachment(AuthSignatureMixin):
 
     rename = models.CharField(max_length=256, blank=True, null=True)
 
+    class Meta:
+        ordering = ('id',)
+
     @property
     def original_filename(self):
         encoded_filename = self.file.name.split('/')[-1]
+        encoded_filename = encoded_filename.split("_")[0]
         encoded_filename = encoded_filename + '=' * \
             (-len(encoded_filename) % 4)  # add padding = if necesary
         # return encoded_filename
