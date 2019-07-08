@@ -14,7 +14,7 @@
           ></v-text-field>
 
           <v-spacer></v-spacer>
-          <app-tag-dialog @savedObject="save"></app-tag-dialog>
+          <!-- <app-tag-dialog @savedObject="save"></app-tag-dialog> -->
         </v-card-title>
 
         <v-layout row v-if="alert">
@@ -63,13 +63,14 @@
         </v-data-table>
       </v-card>
     </v-layout>
+    <file-upload></file-upload>
   </v-container>
 </template>
 
 <script>
 import { mapGetters } from "vuex";
 import _ from "lodash";
-import AppTagDialog from "./TagDialog";
+import FileUpload from "./FileUpload";
 
 export default {
   computed: {
@@ -82,7 +83,7 @@ export default {
     })
   },
   components: {
-    AppTagDialog
+    FileUpload
   },
   data() {
     return {

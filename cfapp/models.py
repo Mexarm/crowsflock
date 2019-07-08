@@ -184,12 +184,15 @@ class SimpleAttachment(AuthSignatureMixin):
                             blank=False, null=False)
 
     rename = models.CharField(max_length=256, blank=True, null=True)
+    original_filename = models.CharField(max_length=256, blank=True, null=True)
+    size = models.IntegerField(null=True)
 
     class Meta:
         ordering = ('id',)
 
     @property
-    def original_filename(self):
+    def get_original_filename(self):
+        print(self.file.name)
         encoded_filename = self.file.name.split('/')[-1]
         encoded_filename = encoded_filename.split("_")[0]
         encoded_filename = encoded_filename + '=' * \
@@ -198,11 +201,18 @@ class SimpleAttachment(AuthSignatureMixin):
         return base64.urlsafe_b64decode(encoded_filename).decode('utf-8')
 
     @property
-    def size(self):
+    def get_size(self):
         if self.file:
             return self.file.size
         return None
 
+    def save(self, *args, **kwargs):
+
+        if self.file:
+            self.original_filename = self.file.name
+        if self.get_size:
+            self.size = self.get_size
+        super(SimpleAttachment, self).save(*args, **kwargs)
 # class AttachmentBuilder(TenantFieldMixin, AuthSignatureMixin):
 #     # takes an open office file, or (inspire wfd :) make data merge and outputs a pdf
 #     UPLOAD_PREFIX = 'attachment_builder_templates/'

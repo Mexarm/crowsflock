@@ -60,11 +60,13 @@ class TagSerializer(CommonFields, serializers.ModelSerializer):
 
 
 class SimpleAttachmentSerializer(CommonFields, serializers.ModelSerializer):
+
     class Meta:
         model = SimpleAttachment
         fields = ('id', 'file', 'rename', 'original_filename',
                   'size') + CommonFields.common_fields
-        read_only_fields = ('file', 'size') + CommonFields.common_fields
+        read_only_fields = ('file', 'original_filename',
+                            'size') + CommonFields.common_fields
 
 
 class SimpleAttachmentFileSerializer(serializers.ModelSerializer):

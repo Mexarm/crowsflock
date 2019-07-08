@@ -29,7 +29,8 @@ from cfapp.models import (
 )
 
 from cfapp.filters import (
-    TagFilter
+    TagFilter,
+    SimpleAttachmentFilter
 )
 
 from cfapp import serializers
@@ -95,7 +96,17 @@ class TagViewSet(mixins.CreateModelMixin,
 class SimpleAttachmentViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.SimpleAttachmentSerializer
     permission_classes = (ExtendedDjangoModelPermissions,)
-    queryset = SimpleAttachment.objects.all()
+
+    filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
+    filterset_class = SimpleAttachmentFilter
+    ordering_fields = ('original_filename', 'size',
+                       'rename', 'created_by', 'created_on')
+    ordering = ('-created_on',)
+    search_fields = ('original_filename', 'rename',)
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        return SimpleAttachment.objects.all()
 
     @decorators.action(
         detail=True,

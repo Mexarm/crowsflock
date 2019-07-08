@@ -16,7 +16,6 @@
           <v-spacer></v-spacer>
           <app-tag-dialog @savedObject="save"></app-tag-dialog>
         </v-card-title>
-
         <v-layout row v-if="alert">
           <v-flex xs12 sm6 offset-sm3>
             <app-alert

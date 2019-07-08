@@ -12,7 +12,12 @@ function userIsAuthenticated(to, from, next) {
   if (store.getters.userIsAuthenticated) {
     next();
   } else {
-    next("/signin");
+    store.dispatch("tryAutoLogin");
+    if (store.getters.userIsAuthenticated) {
+      next();
+    } else {
+      next("/signin");
+    }
   }
 }
 

@@ -19,6 +19,17 @@ export default {
     },
     totalItems(state) {
       return state.totalItems;
+    },
+    listDisplay() {
+      return [
+        "id",
+        "name",
+        "slug",
+        "created_by",
+        "created_on",
+        "modified_by",
+        "modified_on"
+      ];
     }
   },
   mutations: {
@@ -99,7 +110,7 @@ export default {
       // 	});
       // });
     },
-    getHeaders({ commit }) {
+    getHeaders({ commit, getters }) {
       commit("setLoading", true, { root: true });
       axios
         .options(baseUrl)
@@ -109,8 +120,8 @@ export default {
         .then(fields => {
           commit("setLoading", true, { root: true });
           let headers = [];
-          const fields_list = Object.keys(fields);
-          for (const field of fields_list) {
+          //   const fields_list = Object.keys(fields);
+          for (const field of getters.listDisplay) {
             headers.push({
               text: fields[field].label,
               value: field
