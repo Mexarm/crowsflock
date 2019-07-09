@@ -63,9 +63,9 @@ class SimpleAttachmentSerializer(CommonFields, serializers.ModelSerializer):
 
     class Meta:
         model = SimpleAttachment
-        fields = ('id', 'file', 'rename', 'original_filename',
+        fields = ('id', 'description', 'rename', 'original_filename',
                   'size') + CommonFields.common_fields
-        read_only_fields = ('file', 'original_filename',
+        read_only_fields = ('original_filename',
                             'size') + CommonFields.common_fields
 
 

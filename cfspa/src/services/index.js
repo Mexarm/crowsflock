@@ -6,17 +6,16 @@ const settings = {};
 settings.ACCESS_TOKEN_KEY = "token";
 settings.REFRESH_TOKEN_KEY = "refresh";
 settings.baseUrl = "http://127.0.0.1:8000/";
+settings.tokenApi = "api/token/";
+settings.tokenApiRefresh = "api/token/refresh/";
 
 let axiosInstance = axios.create();
 
 function authenticate(request) {
-  return (
-    axiosInstance
-      .post("http://localhost:8000/api/token/", request)
-      // return Vue.http.post('https://crossorigin.me/http://postb.in/VWOhALuu', request)
-      .then(response => Promise.resolve(response.data))
-      .catch(error => Promise.reject(error))
-  );
+  return axiosInstance
+    .post(settings.baseUrl + settings.tokenApi, request)
+    .then(response => Promise.resolve(response.data))
+    .catch(error => Promise.reject(error));
 }
 
 function parseJwt(token) {
@@ -50,7 +49,7 @@ function setTokens(access, refresh) {
   localStorage.setItem(settings.REFRESH_TOKEN_KEY, refresh);
 }
 
-export default {
+export {
   authenticate,
   getAccessToken,
   removeTokens,

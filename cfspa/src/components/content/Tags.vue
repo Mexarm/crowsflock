@@ -137,11 +137,11 @@ export default {
   },
 
   mounted() {
+    this.$store.dispatch("tag/getHeaders");
     this.$store.dispatch("tag/getItems", {
       pagination: this.pagination,
       searchTxt: this.search
     });
-    this.$store.dispatch("tag/getHeaders");
   }
 };
 </script>

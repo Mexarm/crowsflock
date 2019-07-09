@@ -11,6 +11,8 @@ import attachment from "./modules/attachment";
 
 Vue.use(Vuex);
 
+const debug = process.env.NODE_ENV !== "production";
+
 export const store = new Vuex.Store({
   state,
   getters,
@@ -19,5 +21,6 @@ export const store = new Vuex.Store({
   modules: {
     tag,
     attachment
-  }
+  },
+  strict: debug
 });

@@ -6,7 +6,7 @@ import Tags from "../components/content/Tags";
 import Attachments from "../components/content/Attachments";
 //import SignUp from "../components/user/SignUp";
 // import W2pLogin from '@/components/W2pLogin'
-import { store } from "../store/store";
+import { store } from "../store";
 
 function userIsAuthenticated(to, from, next) {
   if (store.getters.userIsAuthenticated) {

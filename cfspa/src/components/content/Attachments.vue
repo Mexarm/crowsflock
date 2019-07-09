@@ -14,7 +14,7 @@
           ></v-text-field>
 
           <v-spacer></v-spacer>
-          <!-- <app-tag-dialog @savedObject="save"></app-tag-dialog> -->
+          <app-attachment-dialog @savedObject="save"></app-attachment-dialog>
         </v-card-title>
 
         <v-layout row v-if="alert">
@@ -37,6 +37,7 @@
         >
           <template v-slot:items="props">
             <td>{{ props.item.id }}</td>
+            <td class="text-xs-left">{{ props.item.description }}</td>
             <td class="text-xs-left">{{ props.item.original_filename }}</td>
             <td class="text-xs-left">{{ props.item.size | formatFileSize }}</td>
             <td class="text-xs-left">{{ props.item.rename }}</td>
@@ -63,14 +64,13 @@
         </v-data-table>
       </v-card>
     </v-layout>
-    <file-upload></file-upload>
   </v-container>
 </template>
 
 <script>
 import { mapGetters } from "vuex";
 import _ from "lodash";
-import FileUpload from "./FileUpload";
+import AppAttachmentDialog from "./AttachmentDialog";
 
 export default {
   computed: {
@@ -81,9 +81,6 @@ export default {
       loading: "loading",
       alert: "alert"
     })
-  },
-  components: {
-    FileUpload
   },
   data() {
     return {
@@ -101,8 +98,8 @@ export default {
       this.search = value;
     }, 500),
     save(obj) {
-      this.$store.dispatch("tag/save", obj).then(() => {
-        this.$store.dispatch("tag/getTags", {
+      this.$store.dispatch("attachment/save", obj).then(() => {
+        this.$store.dispatch("attachment/getTags", {
           pagination: this.pagination,
           searchTxt: this.search
         });
@@ -140,11 +137,14 @@ export default {
   },
 
   mounted() {
+    this.$store.dispatch("attachment/getHeaders");
     this.$store.dispatch("attachment/getItems", {
       pagination: this.pagination,
       searchTxt: this.search
     });
-    this.$store.dispatch("attachment/getHeaders");
+  },
+  components: {
+    AppAttachmentDialog
   }
 };
 </script>

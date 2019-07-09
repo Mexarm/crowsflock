@@ -1,18 +1,13 @@
 
  <template>
-
   <v-dialog
     v-model="dialog"
     max-width="500px"
     @keydown.esc="cancel"
+    @keydown.enter="save"
   >
     <template v-slot:activator="{ on }">
-      <v-btn
-        color="primary"
-        dark
-        class="mb-2"
-        v-on="on"
-      >New Tag</v-btn>
+      <v-btn color="primary" dark class="mb-2" v-on="on">New Tag</v-btn>
     </template>
     <v-card>
       <v-card-title>
@@ -22,11 +17,7 @@
       <v-card-text>
         <v-container grid-list-md>
           <v-layout wrap>
-            <v-flex
-              xs12
-              sm6
-              md4
-            >
+            <v-flex xs12 sm6 md4>
               <v-text-field
                 v-model="editedItem.name"
                 :error-messages="nameErrors"
@@ -43,33 +34,26 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn
-          color="blue darken-1"
-          flat
-          @click="close"
-        >Cancel</v-btn>
-        <v-btn
-          color="blue darken-1"
-          flat
-          @click="save"
-          :disabled="$v.$invalid"
-        >Save</v-btn>
+        <v-btn color="blue darken-1" flat @click="close">Cancel</v-btn>
+        <v-btn color="blue darken-1" flat @click="save" :disabled="$v.$invalid"
+          >Save</v-btn
+        >
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
  <script>
-import { required, minLength, maxLength } from 'vuelidate/lib/validators'
+import { required, minLength, maxLength } from "vuelidate/lib/validators";
 
 export default {
-  data () {
+  data() {
     return {
       editedItem: {
-        name: ''
+        name: ""
       },
       dialog: false
-    }
+    };
   },
   validations: {
     editedItem: {
@@ -81,28 +65,29 @@ export default {
     }
   },
   computed: {
-    formTitle () {
+    formTitle() {
       return this.editedIndex === -1 ? "New Item" : "Edit Item";
     },
-    nameErrors () {
-      const errors = []
-      if (!this.$v.editedItem.name.$dirty) return errors
-      !this.$v.editedItem.name.minLength && errors.push('Name must be more than 3 characters long')
-      !this.$v.editedItem.name.maxLength && errors.push('Name must be less than 32 characters long')
-      !this.$v.editedItem.name.required && errors.push('Name is required.')
-      return errors
-    },
+    nameErrors() {
+      const errors = [];
+      if (!this.$v.editedItem.name.$dirty) return errors;
+      !this.$v.editedItem.name.minLength &&
+        errors.push("Name must be more than 3 characters long");
+      !this.$v.editedItem.name.maxLength &&
+        errors.push("Name must be less than 32 characters long");
+      !this.$v.editedItem.name.required && errors.push("Name is required.");
+      return errors;
+    }
   },
   methods: {
-    save () {
+    save() {
       this.close();
-      this.$emit('savedObject', { name: this.editedItem.name });
-      this.editedItem = {}
-
+      this.$emit("savedObject", { name: this.editedItem.name });
+      this.editedItem = {};
     },
-    close () {
-      this.dialog = false
+    close() {
+      this.dialog = false;
     }
   }
-}
- </script>
+};
+</script>

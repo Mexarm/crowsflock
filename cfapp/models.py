@@ -179,6 +179,7 @@ class Tag(AuthSignatureMixin):
 class SimpleAttachment(AuthSignatureMixin):
     _local_storage_path = 'attachments/'
     _upload_prefix = 'simple_attachments/'
+    description = models.CharField(max_length=256,blank=False, null=False, unique=True)
     file = models.FileField(upload_to=_upload_prefix,
                             storage=PrivateMediaStorage(),
                             blank=False, null=False)

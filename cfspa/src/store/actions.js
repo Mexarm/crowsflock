@@ -1,4 +1,11 @@
-import authService from "../services/auth";
+import {
+  authenticate,
+  setTokens,
+  getUser,
+  settings,
+  removeTokens,
+  getAccessToken
+} from "../services";
 // import {
 //   getUser,
 //   getAccessToken,
@@ -6,19 +13,20 @@ import authService from "../services/auth";
 //   setTokens
 // } from "./utils/utils";
 import router from "../router";
+
 export default {
   updateSideNav({ commit }, payload) {
     commit("setSideNav", payload);
   },
-  signInUser({ commit }, payload) {
+  signInUser({ commit, dispatch }, payload) {
     commit("setAlert", null);
     commit("setLoading", true);
-    authService
-      .authenticate(payload)
+
+    authenticate(payload)
       .then(resp => {
         commit("setLoading", false);
-        authService.setTokens(resp.access, resp.refresh);
-        commit("setUser", authService.getUser(resp.access));
+        setTokens(resp.access, resp.refresh);
+        commit("setUser", getUser(resp.access));
       })
       .catch(err => {
         err = err.response;
@@ -35,32 +43,37 @@ export default {
         if (err.status === 0) {
           message = "Error de conexion";
         }
-        commit("setAlert", { message, type: "error" });
+        dispatch("setAlertTimeout", { message, type: "error" });
       });
   },
   tryAutoLogin({ commit }) {
-    let token = localStorage.getItem(authService.settings.ACCESS_TOKEN_KEY);
-    let refresh = localStorage.getItem(authService.settings.REFRESH_TOKEN_KEY);
+    let token = localStorage.getItem(settings.ACCESS_TOKEN_KEY);
+    let refresh = localStorage.getItem(settings.REFRESH_TOKEN_KEY);
     // @TODO: verify if refresh is not expired
     if (token && refresh) {
-      commit("setUser", authService.getUser(token));
+      commit("setUser", getUser(token));
     }
   },
   signOutUser({ commit }) {
-    authService.removeTokens();
+    removeTokens();
     commit("setUser", null);
     router.replace("/signin");
   },
 
   checkAuth({ commit }) {
-    var token = authService.getAccessToken();
+    var token = getAccessToken();
     if (token) {
-      commit("setUser", authService.getUser(token));
+      commit("setUser", getUser(token));
     } else {
       commit("setUser", null);
     }
   },
-
+  setAlertTimeout({ commit, dispatch }, payload) {
+    commit("setAlert", payload);
+    setTimeout(() => {
+      dispatch("clearAlert");
+    }, 3000);
+  },
   clearAlert({ commit }) {
     commit("setAlert", null);
   }

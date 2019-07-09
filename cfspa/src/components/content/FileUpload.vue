@@ -48,40 +48,34 @@
           cargando {{ fileCount }} archivo(s)... {{ progress }}
           <v-progress-linear v-model="progress"></v-progress-linear>
         </div>
-        <v-alert>{{ error }}</v-alert>
+        <!-- <v-alert>{{ error }}</v-alert> -->
       </form>
     </div>
   </v-layout>
 </template>
 
 <script>
-// import firebase from "firebase/app";
-// import "firebase/storage";
 import { mapGetters } from "vuex";
 import filesize from "filesize";
-// const db = firebase.firestore();
 import axios from "axios";
 
 export default {
   data: () => ({
-    //file: null,
     state: "",
     progress: 0,
     uploadFieldName: "uploadfield",
     files: [],
     fileCount: 0,
-    dataStorageFolder: "data",
-    imageStorageFolder: "public",
+    // dataStorageFolder: "data",
+    // imageStorageFolder: "public",
     allowed: ["csv", "txt"]
-    //uploadedFile: null
   }),
-  computed: {
-    ...mapGetters(["alert", "loading"])
-  },
   // file.type : ['image/tiff' , 'image/jpeg', 'image/png', 'image/gif']
   // file.type : ['application/pdf' , 'application/vnd.oasis.opendocument.spreadsheet' <-ods, 'text/plain', 'text/csv']
   // file.name , file.size, file.lastModified, file.lastModifiedDate, file.type
-
+  computed: {
+    ...mapGetters(["alert", "loading"])
+  },
   methods: {
     filesChanged(name, files) {
       this.state = "";
@@ -96,6 +90,10 @@ export default {
           size: filesize(files[x].size)
         });
       });
+      this.$store.dispatch(
+        "attachment/setIsValidUpload",
+        this.files.every(file => file.allowed)
+      );
     },
     uploadFiles() {
       const files = this.$refs.file_input.files;
@@ -128,88 +126,6 @@ export default {
           this.state = "";
         });
     }
-
-    //   const files = this.$refs.file_input.files;
-    //   if (files && files.length > 0) {
-    //     const ref = firebase.storage().ref();
-    //     const uploadedFiles = [];
-    //     let promises = [];
-    //     let folder = "userfiles/";
-
-    //     Array.from(Array(files.length).keys()).map(i => {
-    //       let file = files[i];
-    //       let fileData = {};
-    //       fileData.name = +new Date() + "-" + file.name;
-    //       fileData.originalName = file.name;
-
-    //       let metadata = {
-    //         contentType: file.type
-    //       };
-    //       fileData.path = folder + fileData.name;
-    //       //   let task = ref.child(fileData.path).put(file, metadata); //metadata not saved ???
-    //       let p = new Promise((resolve, reject) => {
-    //         task.on(
-    //           "state_changed",
-    //           function (snapshot) {
-    //             // Observe state change events such as progress, pause, and resume
-    //             // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
-    //             this.progress =
-    //               snapshot.bytesTransferred / snapshot.totalBytes * 100;
-    //             switch (snapshot.state) {
-    //               case firebase.storage.TaskState.PAUSED: // or 'paused'
-    //                 this.state = "paused";
-    //                 break;
-    //               case firebase.storage.TaskState.RUNNING: // or 'running'
-    //                 this.state = "running";
-    //                 break;
-    //             }
-    //           }.bind(this),
-    //           function (error) {
-    //             // Handle unsuccessful uploads
-    //             //this.$store.commit("setError", error);
-    //             reject(error);
-    //           }.bind(this),
-    //           function () {
-    //             // Handle successful uploads on complete
-    //             // For instance, get the download URL: https://firebasestorage.googleapis.com/...
-    //             this.state = "done";
-    //             this.progress = 0;
-    //             task
-    //               .then(snapshot => snapshot.ref.getDownloadURL())
-    //               .then(url => {
-    //                 fileData.url = url;
-    //                 let dsRef = db.collection("datasets").doc();
-    //                 fileData.id = dsRef.id
-    //                 dsRef
-    //                   .set({
-    //                     url,
-    //                     original_name: fileData.originalName,
-    //                     path: fileData.path,
-    //                     created_on: firebase.firestore.FieldValue.serverTimestamp()
-    //                   })
-    //                   .then(() => {
-    //                     uploadedFiles.push(fileData);
-    //                     resolve(fileData);
-    //                   });
-    //               })
-    //               .catch(error => {
-    //                 reject(error);
-    //               });
-    //           }.bind(this)
-    //         );
-    //       });
-    //       promises.push(p);
-    //     });
-    //     Promise.all(promises).then((data) => {
-    //       //eslint-disable-next-line
-    //       console.log('data', data);
-    //       //this.uploadedFile = data
-    //       this.files = [];
-    //       this.fileCount = 0;
-    //       this.$refs.file_input.value = null;
-    //       this.$emit('uploaded', data)
-    //     });
-    //   }
   }
 };
 </script>
