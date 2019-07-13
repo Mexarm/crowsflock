@@ -21,6 +21,7 @@ class SimpleAttachmentFilter(filters.FilterSet):
     class Meta:
         model = SimpleAttachment
         fields = {
+            'description': ['exact', 'contains'],
             'original_filename': ['exact', 'contains'],
             'rename': ['exact', 'contains'],
             'created_by': ['exact'],

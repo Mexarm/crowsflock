@@ -17,7 +17,7 @@
               );
               fileCount = $event.target.files.length;
             "
-            accept=".csv,.txt"
+            :accept="allowed.map(item => '.' + item).join(',')"
             class="input-file"
           />
           <p v-if="state !== 'running'">
@@ -39,16 +39,6 @@
             }})
           </v-chip>
         </span>
-        <v-btn
-          :disabled="!files.every(item => item.allowed) || files.length == 0"
-          @click="uploadFiles"
-          >Upload Now</v-btn
-        >
-        <div v-if="state === 'running'">
-          cargando {{ fileCount }} archivo(s)... {{ progress }}
-          <v-progress-linear v-model="progress"></v-progress-linear>
-        </div>
-        <!-- <v-alert>{{ error }}</v-alert> -->
       </form>
     </div>
   </v-layout>
@@ -57,18 +47,21 @@
 <script>
 import { mapGetters } from "vuex";
 import filesize from "filesize";
-import axios from "axios";
+// import axios from "axios";
 
 export default {
+  props: {
+    allowed: Array
+  },
   data: () => ({
     state: "",
-    progress: 0,
+    // progress: 0,
     uploadFieldName: "uploadfield",
     files: [],
-    fileCount: 0,
+    fileCount: 0
     // dataStorageFolder: "data",
     // imageStorageFolder: "public",
-    allowed: ["csv", "txt"]
+    // allowed: ["csv", "txt"]
   }),
   // file.type : ['image/tiff' , 'image/jpeg', 'image/png', 'image/gif']
   // file.type : ['application/pdf' , 'application/vnd.oasis.opendocument.spreadsheet' <-ods, 'text/plain', 'text/csv']
@@ -90,42 +83,28 @@ export default {
           size: filesize(files[x].size)
         });
       });
-      this.$store.dispatch(
-        "attachment/setIsValidUpload",
-        this.files.every(file => file.allowed)
-      );
+      // this.$store.dispatch(
+      //   "attachment/setIsValidUpload",
+      //   this.files.every(file => file.allowed) && this.files.length > 0
+      // );
+      this.$emit("changed", {
+        filesList: this.files,
+        fileInputRef: this.$refs.file_input
+      });
     },
-    uploadFiles() {
-      const files = this.$refs.file_input.files;
-      let formData = new FormData();
-      if (files && files.length > 0) {
-        const file = files[0];
-        formData.append("file", file);
-      }
-      const vue = this;
-      let config = {
-        onUploadProgress: function(progressEvent) {
-          vue.progress = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-        }
-      };
-
-      axios
-        .post("http://127.0.0.1:8000/api/attachment/")
-        .then(resp => resp.data)
-        .then(data => {
-          this.state = "running";
-          let uploadUrl =
-            "http://127.0.0.1:8000/api/attachment/" + data.id + "/file/";
-          return axios.put(uploadUrl, formData, config);
-        })
-        .then(resp => resp.data)
-        .then(data => {
-          this.$emit("uploadCompleted", data);
-          this.state = "";
-        });
+    clearInput() {
+      const input = this.$refs.file_input;
+      input.type = "text";
+      input.type = "file";
+      this.files = [];
+      this.$emit("changed", {
+        filesList: this.files,
+        fileInputRef: this.$refs.file_input
+      });
     }
+  },
+  mounted() {
+    this.clearInput();
   }
 };
 </script>

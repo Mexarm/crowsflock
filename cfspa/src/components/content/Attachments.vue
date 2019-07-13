@@ -1,68 +1,92 @@
 <template>
-  <v-container>
-    <v-layout text-xs-center wrap>
-      <v-card>
-        <v-card-title>
-          <h3 class="headline mb-0">Attachments</h3>
-          <v-spacer></v-spacer>
-          <v-text-field
-            append-icon="search"
-            label="Search"
-            single-line
-            hide-details
-            @input="update"
-          ></v-text-field>
-
-          <v-spacer></v-spacer>
-          <app-attachment-dialog @savedObject="save"></app-attachment-dialog>
-        </v-card-title>
-
-        <v-layout row v-if="alert">
-          <v-flex xs12 sm6 offset-sm3>
+  <v-container grid-list-md text-xs-center fluid>
+    <v-layout row wrap>
+      <v-flex xs12>
+        <v-card>
+          <v-card-title class="pt-0 pb-0">
+            <p class="headline ml-3 mb-0 pt-2">Attachments</p>
+            <app-attachment-dialog
+              @upload-completed="onUploadCompleted"
+              @error="onUploadError"
+              :allowed="[
+                'csv',
+                'pdf',
+                'xls',
+                'xlsx',
+                'doc',
+                'docx',
+                'ppt',
+                'jpg',
+                'png',
+                'txt',
+                'zip',
+                'rar'
+              ]"
+            ></app-attachment-dialog>
+            <v-spacer></v-spacer>
+            <v-text-field
+              class="ma-0 pa-0"
+              append-icon="search"
+              label="Search"
+              single-line
+              hide-details
+              clearable
+              @input="update"
+              :value="search"
+            ></v-text-field>
+          </v-card-title>
+          <v-card-text>
             <app-alert
+              v-if="alert"
               @dismissed="onDismissed"
               :text="alert.message"
               :type="alert.type"
             ></app-alert>
-          </v-flex>
-        </v-layout>
-
-        <v-data-table
-          :headers="headers"
-          :items="items"
-          :pagination.sync="pagination"
-          :total-items="totalItems"
-          :loading="loading"
-          class="elevation-1"
-        >
-          <template v-slot:items="props">
-            <td>{{ props.item.id }}</td>
-            <td class="text-xs-left">{{ props.item.description }}</td>
-            <td class="text-xs-left">{{ props.item.original_filename }}</td>
-            <td class="text-xs-left">{{ props.item.size | formatFileSize }}</td>
-            <td class="text-xs-left">{{ props.item.rename }}</td>
-            <td class="text-xs-right">
-              {{ props.item.created_by ? props.item.created_by.username : "" }}
-            </td>
-            <td class="text-xs-right">
-              {{ props.item.created_on | formatDate }}
-            </td>
-            <td class="text-xs-right">
-              {{
-                props.item.modified_by ? props.item.modified_by.username : ""
-              }}
-            </td>
-            <td class="text-xs-right">
-              {{ props.item.modified_on | formatDate }}
-            </td>
-          </template>
-          <template v-slot:no-results>
-            <v-alert :value="true" color="error" icon="warning"
-              >Your search for "{{ search }}" found no results.</v-alert
+            <v-data-table
+              :headers="headers"
+              :items="items"
+              :pagination.sync="pagination"
+              :total-items="totalItems"
+              :loading="loading"
+              :rows-per-page-items="[5, 10, 25, 50]"
+              flat
             >
-          </template>
-        </v-data-table>
-      </v-card>
+              <template v-slot:items="props">
+                <td>{{ props.item.id }}</td>
+                <td class="text-xs-left">{{ props.item.description }}</td>
+                <td class="text-xs-left">{{ props.item.original_filename }}</td>
+                <td class="text-xs-left">
+                  {{ props.item.size | formatFileSize }}
+                </td>
+                <td class="text-xs-left">{{ props.item.rename }}</td>
+                <td class="text-xs-right">
+                  {{
+                    props.item.created_by ? props.item.created_by.username : ""
+                  }}
+                </td>
+                <td class="text-xs-right">
+                  {{ props.item.created_on | formatDate }}
+                </td>
+                <td class="text-xs-right">
+                  {{
+                    props.item.modified_by
+                      ? props.item.modified_by.username
+                      : ""
+                  }}
+                </td>
+                <td class="text-xs-right">
+                  {{ props.item.modified_on | formatDate }}
+                </td>
+              </template>
+              <template v-slot:no-results>
+                <v-alert :value="true" color="error" icon="warning"
+                  >Your search for "{{ search }}" found no results.</v-alert
+                >
+              </template>
+            </v-data-table>
+          </v-card-text>
+        </v-card>
+      </v-flex>
     </v-layout>
   </v-container>
 </template>
@@ -73,6 +97,13 @@ import _ from "lodash";
 import AppAttachmentDialog from "./AttachmentDialog";
 
 export default {
+  data() {
+    return {
+      dialog: false,
+      search: "",
+      pagination: {}
+    };
+  },
   computed: {
     ...mapGetters({
       items: "attachment/items",
@@ -82,29 +113,19 @@ export default {
       alert: "alert"
     })
   },
-  data() {
-    return {
-      dialog: false,
-      search: "",
-      pagination: {}
-      //   editedIndex: -1,
-      //   editedItem: {
-      // name: ""
-      //   },
-    };
-  },
   methods: {
     update: _.debounce(function(value) {
       this.search = value;
     }, 500),
-    save(obj) {
-      this.$store.dispatch("attachment/save", obj).then(() => {
-        this.$store.dispatch("attachment/getTags", {
-          pagination: this.pagination,
-          searchTxt: this.search
-        });
-        this.close();
+    onUploadCompleted(payload) {
+      let obj = payload.obj;
+      this.$store.dispatch("setAlertTimeout", {
+        message: obj.description + " uploaded sucessfully!",
+        type: "success"
       });
+    },
+    onUploadError(error) {
+      this.$store.dispatch("setAlertTimeout", error);
     },
     close() {
       this.dialog = false;
@@ -135,7 +156,6 @@ export default {
       val || this.close();
     }
   },
-
   mounted() {
     this.$store.dispatch("attachment/getHeaders");
     this.$store.dispatch("attachment/getItems", {
@@ -148,6 +168,3 @@ export default {
   }
 };
 </script>
-
-<style>
-</style>

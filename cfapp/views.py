@@ -99,10 +99,10 @@ class SimpleAttachmentViewSet(viewsets.ModelViewSet):
 
     filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
     filterset_class = SimpleAttachmentFilter
-    ordering_fields = ('original_filename', 'size',
+    ordering_fields = ('description', 'original_filename', 'size',
                        'rename', 'created_by', 'created_on')
     ordering = ('-created_on',)
-    search_fields = ('original_filename', 'rename',)
+    search_fields = ('description', 'original_filename', 'rename',)
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):

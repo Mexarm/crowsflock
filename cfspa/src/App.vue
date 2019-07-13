@@ -1,6 +1,5 @@
 <template>
   <v-app>
-
     <!-- <v-toolbar app>
       <v-toolbar-title class="headline text-uppercase">
         <span>crows</span>
@@ -22,13 +21,12 @@
 
     <!-- <app-drawer></app-drawer> -->
     <app-toolbar></app-toolbar>
-    <main>
-      <v-content>
-        <router-view></router-view>
-      </v-content>
-    </main>
+    <!-- <main> -->
+    <v-content>
+      <router-view></router-view>
+    </v-content>
+    <!-- </main> -->
     <app-footer></app-footer>
-
   </v-app>
 </template>
 
