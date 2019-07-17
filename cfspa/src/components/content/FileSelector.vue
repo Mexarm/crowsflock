@@ -1,47 +1,47 @@
 <template>
-  <v-layout sm-12>
-    <div>
-      <form ref="fileForm">
-        <div class="dropbox">
-          <input
-            id="file_input"
-            ref="file_input"
-            type="file"
-            :name="uploadFieldName"
-            :disabled="state === 'running'"
-            @input="
-              filesChanged(
-                $event.target.name,
-                $event.target.files,
-                $event.target.accept
-              );
-              fileCount = $event.target.files.length;
-            "
-            :accept="allowed.map(item => '.' + item).join(',')"
-            class="input-file"
-          />
-          <p v-if="state !== 'running'">
-            <v-icon left>cloud_upload</v-icon>
-            Arrastre su Archivo aqui <br />o haga
-            <a>click para selecionarlo</a>
-          </p>
-        </div>
-        <span v-for="file in files" :key="file.name">
-          <v-chip
-            label
-            :color="file.allowed ? 'green' : 'red'"
-            text-color="white"
-          >
-            <v-icon v-if="file.allowed" left>cloud_upload</v-icon>
-            <v-icon v-if="!file.allowed" left>cloud_off</v-icon
-            >{{ file.name }} ({{
-              file.allowed ? file.size : " tipo de archivo no valido"
-            }})
-          </v-chip>
-        </span>
-      </form>
-    </div>
-  </v-layout>
+  <!-- <v-layout sm-12> -->
+  <div>
+    <form ref="fileForm">
+      <div class="dropbox">
+        <input
+          id="file_input"
+          ref="file_input"
+          type="file"
+          :name="uploadFieldName"
+          :disabled="state === 'running'"
+          @input="
+            filesChanged(
+              $event.target.name,
+              $event.target.files,
+              $event.target.accept
+            );
+            fileCount = $event.target.files.length;
+          "
+          :accept="allowed.map(item => '.' + item).join(',')"
+          class="input-file"
+        />
+        <p v-if="state !== 'running'">
+          <v-icon left>cloud_upload</v-icon>
+          Arrastre su Archivo aqui <br />o haga
+          <a>click para selecionarlo</a>
+        </p>
+      </div>
+      <span v-for="file in files" :key="file.name">
+        <v-chip
+          label
+          :color="file.allowed ? 'green' : 'red'"
+          text-color="white"
+        >
+          <v-icon v-if="file.allowed" left>cloud_upload</v-icon>
+          <v-icon v-if="!file.allowed" left>cloud_off</v-icon
+          >{{ file.name }} ({{
+            file.allowed ? file.size : " tipo de archivo no valido"
+          }})
+        </v-chip>
+      </span>
+    </form>
+  </div>
+  <!-- </v-layout> -->
 </template>
 
 <script>

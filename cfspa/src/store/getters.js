@@ -31,6 +31,9 @@ export default {
   loading(state) {
     return state.loading;
   },
+  progress(state) {
+    return state.progress;
+  },
   alert(state) {
     return state.alert;
   },

@@ -5,11 +5,24 @@ import { settings } from "../../services";
 const baseUrl = settings.baseUrl;
 
 const getters = {
+  item(state) {
+    return state.item;
+  },
   items(state) {
     return state.items;
   },
+  apiOptions(state) {
+    return state.apiOptions;
+  },
   headers(state) {
-    return state.headers;
+    let headers = [];
+    if (!state.apiOptions) return headers;
+    if (!state.apiOptions.hasOwnProperty(state.listDisplay[0])) return headers;
+    for (const field of state.listDisplay) {
+      let fldObj = state.apiOptions[field];
+      headers.push({ text: fldObj.label, value: field });
+    }
+    return headers;
   },
   totalItems(state) {
     return state.totalItems;
@@ -23,11 +36,14 @@ const getters = {
 };
 
 const mutations = {
+  setItem(state, payload) {
+    state.item = payload;
+  },
   setItems(state, payload) {
     state.items = payload;
   },
-  setHeaders(state, payload) {
-    state.headers = payload;
+  setApiOptions(state, payload) {
+    state.apiOptions = payload;
   },
   setTotalItems(state, payload) {
     state.totalItems = payload;
@@ -35,6 +51,28 @@ const mutations = {
 };
 
 const actions = {
+  getItem({ commit, getters, dispatch }, payload) {
+    commit("setLoading", true, { root: true });
+    return axios
+      .get(baseUrl + getters.api + payload + "/")
+      .then(resp => resp.data)
+      .then(data => {
+        commit("setLoading", false, { root: true });
+        commit("setItem", data);
+        return data;
+      })
+      .catch(error => {
+        commit("setLoading", false, { root: true });
+        dispatch(
+          "setAlertTimeout",
+          {
+            message: error.message,
+            type: "error"
+          },
+          { root: true }
+        );
+      });
+  },
   getItems({ commit, getters, dispatch }, { pagination, searchTxt }) {
     const params = getParams(pagination, searchTxt);
     commit("setLoading", true, { root: true });
@@ -58,42 +96,26 @@ const actions = {
         );
       });
   },
-  getHeaders({ commit, getters }) {
+  getApiOptions({ commit, getters }) {
     commit("setLoading", true, { root: true });
     axios
       .options(baseUrl + getters.api)
       .then(resp => resp.data)
       .then(data => data.actions)
       .then(actions => actions.POST)
-      .then(fields => {
-        commit("setLoading", true, { root: true });
-        let headers = [];
-        for (const field of getters.listDisplay) {
-          headers.push({
-            text: fields[field].label,
-            value: field
-          });
-        }
-        return headers;
-      })
-      .then(headers => {
-        commit("setHeaders", headers);
+      .then(fieldsObj => {
+        commit("setLoading", false, { root: true });
+        commit("setApiOptions", fieldsObj);
       });
   },
-  save({ getters, dispatch }, payload) {
+  create({ commit, getters, dispatch }, payload) {
+    commit("setLoading", true, { root: true });
     return axios
       .post(baseUrl + getters.api, payload)
       .then(response => {
         if (response.status === 201) {
-          dispatch(
-            "setAlertTimeout",
-            {
-              message: response.data.name + ", " + response.statusText,
-              type: "success"
-            },
-            { root: true }
-          );
-          return response;
+          commit("setLoading", false, { root: true });
+          return response.data;
         }
       })
       .catch(error => {
@@ -103,7 +125,8 @@ const actions = {
           { root: true }
         );
       });
-  }
+  },
+  update() {}
 };
 
 export { getters, mutations, actions };

@@ -1,68 +1,80 @@
 
  <template>
   <v-dialog
-    v-model="dialog"
-    max-width="500px"
-    @keydown.esc="cancel"
-    @keydown.enter="uploadFiles"
+    persistent
+    :value="value.dialog"
+    @input="input($event)"
+    max-width="680px"
+    @keydown.esc="close"
+    @keydown.enter="acceptDialog"
   >
     <template v-slot:activator="{ on }">
-      <!-- <v-btn color="primary" dark class="mb-2" v-on="on">New Attachment</v-btn> -->
-      <v-btn class="ml-4 mt-3" dark small flat color="primary" v-on="on">
-        <v-icon dark>add</v-icon>
-        new
-      </v-btn>
-      <!-- <v-btn flat color="primary" class="ma-0 pa-0" v-on="on">New</v-btn> -->
+      <div class="text-xs-center">
+        <v-btn v-on="on" round color="primary" class="ml-4 mt-3" dark small>
+          <v-icon dark>add</v-icon> new
+        </v-btn>
+      </div>
     </template>
+
     <v-card>
       <v-card-title>
         <span class="headline">{{ formTitle }}</span>
       </v-card-title>
 
       <v-card-text>
-        <v-container grid-list-md>
-          <v-layout wrap>
-            <v-flex xs12 sm6 md4>
+        <v-container grid-list-md fluid>
+          <v-layout row wrap>
+            <v-flex xs12>
               <v-text-field
+                box
                 :error-messages="descriptionErrors"
-                count="256"
+                counter="256"
                 required
                 label="description"
-                @input="
-                  $v.editedItem.description.$touch();
-                  updateDescription($event);
-                "
+                hint="describe your attachment, so it will be easier to find it later"
                 :value="editedItem.description"
+                @input="updateDescription($event)"
                 @blur="$v.editedItem.description.$touch()"
+                :loading="loading || $v.$pending"
               ></v-text-field>
               <v-text-field
+                box
                 v-model="editedItem.rename"
                 :error-messages="renameErrors"
-                count="256"
+                counter="256"
                 label="rename file to"
+                hint="your file will be renamed on send"
                 @input="$v.editedItem.rename.$touch()"
                 @blur="$v.editedItem.rename.$touch()"
+                :disabled="loading"
               ></v-text-field>
             </v-flex>
           </v-layout>
         </v-container>
-        <span v-if="!loading">
-          <app-file-upload
-            @changed="fileUploadChanged"
-            :allowed="allowed"
-          ></app-file-upload>
-        </span>
-        <div v-if="loading && progress < 100">
-          cargando archivo(s)...{{ progress }}
-          <v-progress-linear v-model="progress"></v-progress-linear>
-        </div>
-        <div v-if="loading && progress == 100">
-          finalizando la carga ...
-          <v-progress-circular
-            indeterminate
-            color="primary"
-          ></v-progress-circular>
-        </div>
+
+        <v-container grid-list-md fluid>
+          <v-layout row wrap>
+            <v-flex xs12>
+              <span v-if="!loading">
+                <app-file-selector
+                  @changed="fileUploadChanged"
+                  :allowed="allowed"
+                ></app-file-selector>
+              </span>
+              <div v-if="loading && progress < 100">
+                cargando archivo(s)...{{ progress }}
+                <v-progress-linear v-model="progress"></v-progress-linear>
+              </div>
+              <div v-if="loading && progress == 100">
+                finalizando la carga ...
+                <v-progress-circular
+                  indeterminate
+                  color="primary"
+                ></v-progress-circular>
+              </div>
+            </v-flex>
+          </v-layout>
+        </v-container>
       </v-card-text>
 
       <v-card-actions>
@@ -73,38 +85,37 @@
         <v-btn
           color="blue darken-1"
           flat
-          @click="uploadFiles"
+          @click="acceptDialog"
           :disabled="$v.$invalid || !isValidUpload || loading"
-          >upload</v-btn
+          >{{ isNew ? "upload" : "update" }}</v-btn
         >
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
- <script>
+<script>
 import { required, minLength, maxLength } from "vuelidate/lib/validators";
-import AppFileUpload from "./FileUpload";
+import AppFileSelector from "./FileSelector";
 import { mapGetters } from "vuex";
+
 import axios from "axios";
 import _ from "lodash";
 
 export default {
   props: {
-    allowed: Array //[".csv", ".txt"]
+    allowed: Array, //["csv", "txt"]
+    value: Object
   },
   data() {
     return {
       editedItem: {
+        id: null,
         description: "",
         rename: ""
       },
-      dialog: false,
-      progress: 0,
-      // state: "",
       filesList: [],
-      fileInputRef: null,
-      callingApi: false
+      fileInputRef: null
     };
   },
   validations: {
@@ -118,10 +129,6 @@ export default {
           if (value === "") return true;
           // api async call,
           return new Promise((resolve, reject) => {
-            // setTimeout(() => {
-            //   resolve(typeof value === 'string' && value.length % 2 !== 0)
-            // }, 350 + Math.random() * 300)
-            this.callingApi = true;
             axios
               .get("http://127.0.0.1:8000/api/attachment/", {
                 params: {
@@ -129,15 +136,7 @@ export default {
                 }
               })
               .then(resp => resp.data)
-              // .then(data => {
-              //   //eslint-disable-next-line
-              //   console.log("data:", data, data.count === 0);
-              //   return data;
-              // })
-              .then(data => {
-                this.callingApi = false;
-                return resolve(data.count == 0);
-              })
+              .then(data => resolve(data.count == 0))
               .catch(err => reject(err));
           });
         }
@@ -149,15 +148,20 @@ export default {
   },
   computed: {
     ...mapGetters({
-      loading: "loading"
+      loading: "loading",
+      progress: "progress",
+      item: "attachment/item"
     }),
     isValidUpload() {
       return (
         this.filesList.every(file => file.allowed) && this.filesList.length > 0
       );
     },
+    isNew() {
+      return this.value.itemId == null;
+    },
     formTitle() {
-      return this.editedIndex === -1 ? "New Item" : "Edit Item";
+      return this.isNew ? "New" : "Edit";
     },
     descriptionErrors() {
       const errors = [];
@@ -167,8 +171,9 @@ export default {
       !this.$v.editedItem.description.maxLength &&
         errors.push("description must be less than 256 characters long");
       !this.$v.editedItem.description.required &&
-        errors.push("Name is required.");
-      !this.$v.editedItem.description.isUnique &&
+        errors.push("description is required.");
+      !this.$v.editedItem.description.$pending &&
+        !this.$v.editedItem.description.isUnique &&
         errors.push("description already exists");
       return errors;
     },
@@ -181,69 +186,75 @@ export default {
     }
   },
   methods: {
-    // save() {
-    //   this.$emit("savedObject", { name: this.editedItem.name });
-    //   this.editedItem = {};
-    //   this.close();
-    // },
+    input(value) {
+      let newVal = {
+        dialog: value,
+        itemId: this.value.itemId
+      };
+      this.$emit("input", newVal);
+    },
+    getItem() {
+      let itemId = this.value.itemId;
+      if (itemId) {
+        this.$store.dispatch("attachment/getItem", itemId).then(item => {
+          this.editedItem.id = item.id;
+          this.editedItem.description = item.description;
+          this.editedItem.rename = item.rename;
+        });
+      }
+    },
     updateDescription: _.debounce(function(value) {
       this.editedItem.description = value;
-    }, 500),
+      this.$v.editedItem.description.$touch();
+    }, 300),
     close() {
-      this.dialog = false;
+      let newVal = {
+        dialog: false,
+        itemId: null
+      };
+      this.$v.$reset();
+      this.$emit("input", newVal);
+      // this.$emit("input", newVal);
+      // this.input(false);
+      // this.$emit("onDismiss");
     },
     fileUploadChanged(obj) {
       this.filesList = obj.filesList;
       this.fileInputRef = obj.fileInputRef;
     },
-    uploadFiles() {
-      const files = this.fileInputRef.files;
-      let formData = new FormData();
-      if (files && files.length > 0) {
-        const file = files[0];
-        formData.append("file", file);
-      }
-      const vue = this;
-      let config = {
-        onUploadProgress: function(progressEvent) {
-          vue.progress = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-        }
-      };
-
-      let attachmentObj = null;
-      this.$store.commit("setLoading", true);
-      axios
-        .post("http://127.0.0.1:8000/api/attachment/", this.editedItem)
-        .then(resp => resp.data)
-        .then(data => {
-          attachmentObj = data;
-          let uploadUrl =
-            "http://127.0.0.1:8000/api/attachment/" + data.id + "/file/";
-          return axios.put(uploadUrl, formData, config);
-        })
-        .then(resp => resp.data)
-        .then(data => {
-          this.$store.commit("setLoading", false);
-
-          this.$nextTick(() => {
-            this.$v.$reset();
-            this.editedItem = { description: "", rename: "" };
-            this.progress = 0;
-          });
-          this.$emit("upload-completed", { obj: attachmentObj, file: data });
-          this.close();
-        })
-        .catch(err => {
-          this.$store.commit("setLoading", false);
-          this.close();
-          this.$emit("error", { message: err.response.data, type: "error" });
+    acceptDialog() {
+      let item = _.clone(this.editedItem);
+      if (this.isNew) {
+        this.$emit("createItem", {
+          item,
+          fileInputRef: this.fileInputRef
         });
+      } else {
+        this.$emit("updateItem"),
+          {
+            item,
+            fileInputRef: this.fileInputRef
+            // fileChanged: true
+          };
+      }
+    }
+  },
+  watch: {
+    value: {
+      //watch dialog prop if false close dialog??
+      handler(value) {
+        if (value.itemId) {
+          this.getItem();
+        } else {
+          this.editedItem.description = "";
+          this.editedItem.rename = "";
+        }
+      },
+      deep: true
     }
   },
   components: {
-    AppFileUpload
+    AppFileSelector
   }
 };
 </script>
