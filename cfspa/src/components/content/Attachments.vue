@@ -74,7 +74,7 @@
                 </td>
                 <td class="text-xs-left">
                   <v-icon
-                    @click="downloadFile(props.item.id, props.item.original_filename)"
+                    @click="downloadFile(props.item.id)"
                     class="pr-2"
                     small
                     color="green"
@@ -173,32 +173,9 @@ export default {
           this.dialogModel.itemId = null;
         });
     },
-    downloadFile(attachmentId, original_filename) {
-      // function onStartedDownload(id) {
-      //   //eslint-disable-next-line
-      //   console.log(`Started downloading: ${id}`);
-      // }
-
-      // function onFailed(error) {
-      //   //eslint-disable-next-line
-      //   console.log(`Download failed: ${error}`);
-      // }
+    downloadFile(attachmentId) {
       this.$store.dispatch("attachment/getFileUrl", attachmentId).then(data => {
-        // let downloadUrl = data.file;
-        // return (downloading = browser.downloads.download({
-        //   url: downloadUrl,
-        //   filename: original_filename,
-        //   conflictAction: "uniquify"
-        // }));
-        // var uriContent =
-        //   "data:application/octet-stream," + encodeURIComponent(data.file);
         triggerFileDownload(data.file);
-        // var element = document.createElement("a");
-        // element.setAttribute("href", data.file);
-        // element.style.display = "none";
-        // document.body.appendChild(element);
-        // element.click();
-        // document.body.removeChild(element);
       });
     },
     onUpdatedItem(payload) {
