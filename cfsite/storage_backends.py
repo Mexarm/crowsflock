@@ -16,6 +16,9 @@ from storages.backends.s3boto3 import S3Boto3Storage
 class PrivateMediaStorage(S3Boto3Storage):
     location = settings.AWS_PRIVATE_MEDIA_LOCATION
     default_acl = 'private'
+    # object_parameters = {
+    #     'CacheControl': 'max-age=604800'
+    # }
     file_overwrite = False
     custom_domain = False
 

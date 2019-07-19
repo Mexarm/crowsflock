@@ -1,4 +1,3 @@
-
  <template>
   <v-dialog
     persistent
@@ -10,7 +9,14 @@
   >
     <template v-slot:activator="{ on }">
       <div class="text-xs-center">
-        <v-btn v-on="on" round color="primary" class="ml-4 mt-3" dark small>
+        <v-btn
+          v-on="on"
+          round
+          color="primary"
+          class="ml-4 mt-3"
+          dark
+          small
+        >
           <v-icon dark>add</v-icon> new
         </v-btn>
       </div>
@@ -22,8 +28,14 @@
       </v-card-title>
 
       <v-card-text>
-        <v-container grid-list-md fluid>
-          <v-layout row wrap>
+        <v-container
+          grid-list-md
+          fluid
+        >
+          <v-layout
+            row
+            wrap
+          >
             <v-flex xs12>
               <v-text-field
                 box
@@ -48,47 +60,91 @@
                 @blur="$v.editedItem.rename.$touch()"
                 :disabled="loading"
               ></v-text-field>
+              <v-text-field
+                box
+                v-model="editedItem.original_filename"
+                label="File"
+                hint="uploaded file"
+                :readonly="true"
+              >
+                <template v-slot:append>
+
+                  <v-btn
+                    flat
+                    icon
+                    class="pa-0 ma-0"
+                    color="green"
+                    @click="onDownload"
+                    v-if="editedItem.original_filename"
+                  >
+                    <v-icon>cloud_download</v-icon>
+                  </v-btn>
+                  <v-btn
+                    flat
+                    icon
+                    class="pa-0 ma-0"
+                    color="red"
+                    @click="onDownload"
+                    v-if="editedItem.original_filename"
+                  >
+                    <v-icon>delete_forever</v-icon>
+                  </v-btn>
+                </template>
+
+              </v-text-field>
             </v-flex>
           </v-layout>
         </v-container>
 
-        <v-container grid-list-md fluid>
-          <v-layout row wrap>
+        <!-- ====== file Selector ======= -->
+        <v-container
+          grid-list-md
+          fluid
+        >
+          <v-layout
+            row
+            wrap
+          >
             <v-flex xs12>
-              <span v-if="!loading">
-                <app-file-selector
-                  @changed="fileUploadChanged"
-                  :allowed="allowed"
-                ></app-file-selector>
-              </span>
-              <div v-if="loading && progress < 100">
-                cargando archivo(s)...{{ progress }}
-                <v-progress-linear v-model="progress"></v-progress-linear>
-              </div>
-              <div v-if="loading && progress == 100">
-                finalizando la carga ...
-                <v-progress-circular
-                  indeterminate
-                  color="primary"
-                ></v-progress-circular>
+              <div v-if="showFileSelector">
+                <span v-if="!loading">
+                  <app-file-selector
+                    @changed="onfileSelectorChanged"
+                    :allowed="allowed"
+                  ></app-file-selector>
+                </span>
+                <div v-if="loading && progress < 100">
+                  cargando archivo(s)...{{ progress }}
+                  <v-progress-linear v-model="progress"></v-progress-linear>
+                </div>
+                <div v-if="loading && progress == 100">
+                  finalizando la carga ...
+                  <v-progress-circular
+                    indeterminate
+                    color="primary"
+                  ></v-progress-circular>
+                </div>
               </div>
             </v-flex>
           </v-layout>
         </v-container>
+        <!-- ===================== -->
       </v-card-text>
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn :disabled="loading" color="blue darken-1" flat @click="close"
-          >Cancel</v-btn
-        >
+        <v-btn
+          :disabled="loading"
+          color="blue darken-1"
+          flat
+          @click="close"
+        >Cancel</v-btn>
         <v-btn
           color="blue darken-1"
           flat
           @click="acceptDialog"
-          :disabled="$v.$invalid || !isValidUpload || loading"
-          >{{ isNew ? "upload" : "update" }}</v-btn
-        >
+          :disabled="$v.$invalid || !fileSelectorValid || loading"
+        >{{ isNew ? "upload" : "update" }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -98,8 +154,8 @@
 import { required, minLength, maxLength } from "vuelidate/lib/validators";
 import AppFileSelector from "./FileSelector";
 import { mapGetters } from "vuex";
+import { triggerFileDownload } from "../../utils";
 
-import axios from "axios";
 import _ from "lodash";
 
 export default {
@@ -112,7 +168,9 @@ export default {
       editedItem: {
         id: null,
         description: "",
-        rename: ""
+        original_filename: "",
+        rename: "",
+        url: null
       },
       filesList: [],
       fileInputRef: null
@@ -129,13 +187,8 @@ export default {
           if (value === "") return true;
           // api async call,
           return new Promise((resolve, reject) => {
-            axios
-              .get("http://127.0.0.1:8000/api/attachment/", {
-                params: {
-                  description: value
-                }
-              })
-              .then(resp => resp.data)
+            this.$store
+              .dispatch("attachment/filterItems", { description: value })
               .then(data => resolve(data.count == 0))
               .catch(err => reject(err));
           });
@@ -150,12 +203,16 @@ export default {
     ...mapGetters({
       loading: "loading",
       progress: "progress",
-      item: "attachment/item"
+      item: "attachment/item",
+      api: "attachment/api"
     }),
-    isValidUpload() {
+    fileSelectorValid() {
       return (
         this.filesList.every(file => file.allowed) && this.filesList.length > 0
       );
+    },
+    showFileSelector() {
+      return this.isNew || !this.editedItem.original_filename;
     },
     isNew() {
       return this.value.itemId == null;
@@ -172,7 +229,10 @@ export default {
         errors.push("description must be less than 256 characters long");
       !this.$v.editedItem.description.required &&
         errors.push("description is required.");
-      !this.$v.editedItem.description.$pending &&
+      let keyNeedsValidation =
+        this.isNew || !(this.item.description === this.editedItem.description);
+      keyNeedsValidation &&
+        !this.$v.editedItem.description.$pending &&
         !this.$v.editedItem.description.isUnique &&
         errors.push("description already exists");
       return errors;
@@ -186,6 +246,13 @@ export default {
     }
   },
   methods: {
+    resetEditedItem() {
+      this.editedItem.id = null;
+      this.editedItem.description = "";
+      this.editedItem.original_filename = "";
+      this.editedItem.rename = "";
+      this.editedItem.url = null;
+    },
     input(value) {
       let newVal = {
         dialog: value,
@@ -196,13 +263,22 @@ export default {
     getItem() {
       let itemId = this.value.itemId;
       if (itemId) {
-        this.$store.dispatch("attachment/getItem", itemId).then(item => {
-          this.editedItem.id = item.id;
-          this.editedItem.description = item.description;
-          this.editedItem.rename = item.rename;
-        });
+        this.$store
+          .dispatch("attachment/getItemById", itemId)
+          .then(item => {
+            this.editedItem.id = item.id;
+            this.editedItem.original_filename = item.original_filename;
+            this.editedItem.description = item.description;
+            this.editedItem.rename = item.rename;
+            return item;
+          })
+          .then(item => this.$store.dispatch("attachment/getFileUrl", item.id))
+          .then(data => {
+            this.editedItem.url = data.file;
+          });
       }
     },
+    itemExists() {},
     updateDescription: _.debounce(function(value) {
       this.editedItem.description = value;
       this.$v.editedItem.description.$touch();
@@ -214,13 +290,13 @@ export default {
       };
       this.$v.$reset();
       this.$emit("input", newVal);
-      // this.$emit("input", newVal);
-      // this.input(false);
-      // this.$emit("onDismiss");
     },
-    fileUploadChanged(obj) {
+    onfileSelectorChanged(obj) {
       this.filesList = obj.filesList;
       this.fileInputRef = obj.fileInputRef;
+    },
+    onDownload() {
+      triggerFileDownload(this.editedItem.url);
     },
     acceptDialog() {
       let item = _.clone(this.editedItem);
@@ -234,7 +310,6 @@ export default {
           {
             item,
             fileInputRef: this.fileInputRef
-            // fileChanged: true
           };
       }
     }

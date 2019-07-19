@@ -47,4 +47,13 @@ function getParams(pagination, searchTxt) {
   return params;
 }
 
-export { getParams };
+function triggerFileDownload(url) {
+  var element = document.createElement("a");
+  element.setAttribute("href", url);
+  element.style.display = "none";
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+}
+
+export { getParams, triggerFileDownload };

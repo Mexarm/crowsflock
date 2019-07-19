@@ -47,6 +47,11 @@ export default {
     setIsValidUpload({ commit }, payload) {
       commit("setIsValidUpload", payload);
     },
+    getFileUrl({ getters }, payload) {
+      return Axios.get(baseUrl + getters.api + payload + "/file/").then(
+        resp => resp.data
+      );
+    },
     uploadFile({ commit, getters }, payload) {
       let files = payload.fileInputRef.files;
       let id = payload.id;

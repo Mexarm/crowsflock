@@ -110,20 +110,23 @@ class SimpleAttachmentViewSet(viewsets.ModelViewSet):
 
     @decorators.action(
         detail=True,
-        methods=['PUT'],
+        methods=['GET', 'PUT'],
         permission_classes=(ExtendedDjangoModelPermissions,),
         serializer_class=serializers.SimpleAttachmentFileSerializer,
         parser_classes=[parsers.MultiPartParser],
     )
-    def file(self, request, pk):
+    def file(self, request, pk=None):
         obj = self.get_object()
-        serializer = self.serializer_class(obj, data=request.data,
-                                           partial=True)
-        if serializer.is_valid():
+        if request.method == 'GET':
+            serializer = self.serializer_class(obj)
+        if request.method == 'PUT':
+            serializer = self.serializer_class(obj, data=request.data,
+                                               partial=True)
+            if not serializer.is_valid():
+                return response.Response(serializer.errors,
+                                         status.HTTP_400_BAD_REQUEST)
             serializer.save()
-            return response.Response(serializer.data)
-        return response.Response(serializer.errors,
-                                 status.HTTP_400_BAD_REQUEST)
+        return response.Response(serializer.data)
 
 
 class AdvancedAttachmentViewSet(viewsets.ModelViewSet):

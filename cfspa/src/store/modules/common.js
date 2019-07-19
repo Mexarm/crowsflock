@@ -51,7 +51,7 @@ const mutations = {
 };
 
 const actions = {
-  getItem({ commit, getters, dispatch }, payload) {
+  getItemById({ commit, getters, dispatch }, payload) {
     commit("setLoading", true, { root: true });
     return axios
       .get(baseUrl + getters.api + payload + "/")
@@ -72,6 +72,13 @@ const actions = {
           { root: true }
         );
       });
+  },
+  filterItems({ getters }, payload) {
+    return axios
+      .get(baseUrl + getters.api, {
+        params: payload
+      })
+      .then(resp => resp.data);
   },
   getItems({ commit, getters, dispatch }, { pagination, searchTxt }) {
     const params = getParams(pagination, searchTxt);

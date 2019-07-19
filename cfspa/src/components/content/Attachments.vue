@@ -1,11 +1,17 @@
 <template>
-  <v-container grid-list-md text-xs-center fluid>
-    <v-layout row wrap>
+  <v-container
+    grid-list-md
+    text-xs-center
+    fluid
+  >
+    <v-layout
+      row
+      wrap
+    >
       <v-flex xs12>
         <v-card>
           <v-card-title class="pt-0 pb-0">
             <p class="headline ml-3 mb-0 pt-2">Attachments</p>
-            <!-- @upload-completed="onUploadCompleted" -->
             <app-attachment-dialog
               v-model="dialogModel"
               :allowed="[
@@ -54,15 +60,13 @@
               flat
             >
               <template v-slot:items="props">
-                <!-- <td>{{ props.item.id }}</td> -->
                 <td class="text-xs-left">
                   <v-icon
                     @click="editItem(props.item.id)"
                     class="pr-2"
                     small
                     color="secondary"
-                    >edit</v-icon
-                  >
+                  >edit</v-icon>
                   {{ props.item.description }}
                 </td>
                 <td class="text-xs-left">
@@ -70,13 +74,12 @@
                 </td>
                 <td class="text-xs-left">
                   <v-icon
-                    @click="editItem(props.item.id)"
+                    @click="downloadFile(props.item.id, props.item.original_filename)"
                     class="pr-2"
                     small
                     color="green"
                     v-if="props.item.size"
-                    >cloud_download</v-icon
-                  >
+                  >cloud_download</v-icon>
                   {{ props.item.size | formatFileSize }}
                 </td>
                 <td class="text-xs-left">{{ props.item.rename }}</td>
@@ -85,31 +88,14 @@
                   {{
                     props.item.created_by ? props.item.created_by.username : ""
                   }}
-                  <!-- {{
-                    props.item.modified_by
-                      ? props.item.modified_by.username
-                      : ""
-                  }}
-                  {{ props.item.modified_on | formatDate }} -->
                 </td>
-                <!-- <td class="text-xs-right">
-                  {{ props.item.created_on | formatDate }}
-                </td>
-                <td class="text-xs-right">
-                  {{
-                    props.item.modified_by
-                      ? props.item.modified_by.username
-                      : ""
-                  }}
-                </td>
-                <td class="text-xs-right">
-                  {{ props.item.modified_on | formatDate }}
-                </td> -->
               </template>
               <template v-slot:no-results>
-                <v-alert :value="true" color="error" icon="warning"
-                  >Your search for "{{ search }}" found no results.</v-alert
-                >
+                <v-alert
+                  :value="true"
+                  color="error"
+                  icon="warning"
+                >Your search for "{{ search }}" found no results.</v-alert>
               </template>
             </v-data-table>
           </v-card-text>
@@ -123,6 +109,7 @@
 import { mapGetters } from "vuex";
 import _ from "lodash";
 import AppAttachmentDialog from "./AttachmentDialog";
+import { triggerFileDownload } from "../../utils";
 
 export default {
   data() {
@@ -131,8 +118,6 @@ export default {
         dialog: false,
         itemId: null
       },
-      // editedItemId: null,
-      // dialog: false,
       search: "",
       pagination: {
         rowsPerPage: 10
@@ -150,35 +135,13 @@ export default {
     })
   },
   methods: {
-    // dialogDismissed() {
-    //   this.editedItemId = null;
-    // },
     editItem(itemId) {
       this.dialogModel.itemId = itemId;
       this.dialogModel.dialog = true;
-      // this.editedItemId = itemId;
-      // this.dialog = true;
     },
     update: _.debounce(function(value) {
       this.search = value;
     }, 300),
-    // onUploadCompleted(payload) {
-    //   let obj = payload.obj;
-    //   this.$store.dispatch("setAlertTimeout", {
-    //     message: obj.description + " uploaded sucessfully!",
-    //     type: "success"
-    //   });
-    //   this.$store.dispatch("attachment/getItems", {
-    //     pagination: this.pagination,
-    //     searchTxt: this.search
-    //   });
-    // },
-    // onUploadError(error) {
-    //   this.$store.dispatch("setAlertTimeout", error);
-    // },
-    // close() {
-    //   this.dialog = false;
-    // },
     onCreatedItem(payload) {
       this.$store
         .dispatch("attachment/create", payload.item)
@@ -210,6 +173,34 @@ export default {
           this.dialogModel.itemId = null;
         });
     },
+    downloadFile(attachmentId, original_filename) {
+      // function onStartedDownload(id) {
+      //   //eslint-disable-next-line
+      //   console.log(`Started downloading: ${id}`);
+      // }
+
+      // function onFailed(error) {
+      //   //eslint-disable-next-line
+      //   console.log(`Download failed: ${error}`);
+      // }
+      this.$store.dispatch("attachment/getFileUrl", attachmentId).then(data => {
+        // let downloadUrl = data.file;
+        // return (downloading = browser.downloads.download({
+        //   url: downloadUrl,
+        //   filename: original_filename,
+        //   conflictAction: "uniquify"
+        // }));
+        // var uriContent =
+        //   "data:application/octet-stream," + encodeURIComponent(data.file);
+        triggerFileDownload(data.file);
+        // var element = document.createElement("a");
+        // element.setAttribute("href", data.file);
+        // element.style.display = "none";
+        // document.body.appendChild(element);
+        // element.click();
+        // document.body.removeChild(element);
+      });
+    },
     onUpdatedItem(payload) {
       //eslint-disable-next-line
       console.log(payload);
@@ -236,9 +227,6 @@ export default {
         });
       }
     }
-    // dialog(val) {
-    //   val || this.close();
-    // }
   },
   mounted() {
     this.$store.dispatch("attachment/getApiOptions");

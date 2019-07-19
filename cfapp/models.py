@@ -179,7 +179,8 @@ class Tag(AuthSignatureMixin):
 class SimpleAttachment(AuthSignatureMixin):
     _local_storage_path = 'attachments/'
     _upload_prefix = 'simple_attachments/'
-    description = models.CharField(max_length=256,blank=False, null=False, unique=True)
+    description = models.CharField(
+        max_length=256, blank=False, null=False, unique=True)
     file = models.FileField(upload_to=_upload_prefix,
                             storage=PrivateMediaStorage(),
                             blank=False, null=False)
@@ -211,6 +212,12 @@ class SimpleAttachment(AuthSignatureMixin):
 
         if self.file:
             self.original_filename = self.file.name
+            self.file.storage.object_parameters = {
+                'ContentDisposition': 'attachments; filename="%s"' % self.file.name}
+            #ACL, CacheControl, ContentDisposition, ContentEncoding, ContentLanguage,
+            # ContentType, Expires, GrantFullControl, GrantRead, GrantReadACP, GrantWriteACP,
+            # Metadata, RequestPayer, ServerSideEncryption, StorageClass, SSECustomerAlgorithm,
+            # SSECustomerKey, SSECustomerKeyMD5, SSEKMSKeyId, WebsiteRedirectLocation
         if self.get_size:
             self.size = self.get_size
         super(SimpleAttachment, self).save(*args, **kwargs)
